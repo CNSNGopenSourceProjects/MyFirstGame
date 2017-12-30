@@ -4,4 +4,6 @@
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
     <string name="hello_world">Hello World!</string>
+    <string name="botao_pressionado">Botão pressionado</string>
+    <string name="consome_botao_impresso">Pressionado o botão de voltar</string>
 </resources>

@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.support.v7.app.AppCompatActivity
 import android.view.View
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_fullscreen.*
 
 /**
@@ -55,17 +56,24 @@ class FullscreenActivity : AppCompatActivity() {
 
         // Set up the user interaction to manually show or hide the system UI.
         fullscreen_content.setOnClickListener { toggle() }
-        myFirstButton.setOnClickListener { bottonClicked() }    // FC: reconhece o click do botão
 
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
         dummy_button.setOnTouchListener(mDelayHideTouchListener)
+
+        myFirstButton.setOnClickListener { bottonClicked() }    // FC: reconhece o click do botão
     }
 
-    // Reconhece o click do botão
+    // FC: Reconhece o click do botão
     private fun bottonClicked() {
-        myTextView.text = "Botão pressionado"
+        myTextView.text = getString(R.string.botao_pressionado)
+    }
+
+    // FC: Reconhece quando o botão de ligar é pressionado e consome
+    override fun onBackPressed() {
+//        super.onBackPressed()
+        Toast.makeText(this, getString(R.string.consome_botao_impresso), Toast.LENGTH_LONG).show()
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
