@@ -63,6 +63,14 @@ class FullscreenActivity : AppCompatActivity() {
         dummy_button.setOnTouchListener(mDelayHideTouchListener)
 
         myFirstButton.setOnClickListener { bottonClicked() }    // FC: reconhece o click do botão
+
+        // conhecendo a entrada por toque na tela = mostra a coordenada
+        val coordenadas = txtCoords
+        val parent = loParent
+        parent.setOnTouchListener { v, event ->
+            coordenadas.text = "[x,y]= ${event.getX().toInt()}, ${event.getY().toInt()}"
+            true
+        }
     }
 
     // FC: Reconhece o click do botão
