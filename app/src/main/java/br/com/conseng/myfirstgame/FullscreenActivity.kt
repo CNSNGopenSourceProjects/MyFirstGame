@@ -1,5 +1,10 @@
 package br.com.conseng.myfirstgame
 
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Bundle
 import android.os.Handler
 import android.support.v7.app.AppCompatActivity
@@ -11,7 +16,27 @@ import kotlinx.android.synthetic.main.activity_fullscreen.*
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
-class FullscreenActivity : AppCompatActivity() {
+class FullscreenActivity : AppCompatActivity(), SensorEventListener {
+    /**
+     * Called ONLY when the accuracy of the registered sensor has changed.  Unlike
+     * @param accuracy The new accuracy of this sensor, one of "SensorManager.SENSOR_STATUS_*"
+     */
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+    }
+
+    /**
+     * Called when there is a new sensor event.
+     * @param event the {@link android.hardware.SensorEvent SensorEvent}.
+     * @since Note that "on changed" is somewhat of a misnomer, as this will also be called if we
+     * have a new reading from a sensor with the exact same sensor values (but a newer timestamp).
+     */
+    override fun onSensorChanged(event: SensorEvent?) {
+        val x: Float = event!!.values[0]
+        val y: Float = event.values[1]
+        val z: Float = event.values[2]
+        txtAccel.text = "[x,y,z]\n x=%.3f\n y=%.3f\n z=%.3f".format(x, y, z)
+    }
+
     private val mHideHandler = Handler()
     private val mHidePart2Runnable = Runnable {
         // Delayed removal of status and navigation bar
@@ -54,6 +79,24 @@ class FullscreenActivity : AppCompatActivity() {
 
         mVisible = true
 
+        // FC: conhecendo a entrada por toque na tela = mostra a coordenada
+        val coordenadas = txtCoords
+        val parent = ralatParent
+        parent.setOnTouchListener { v, event ->
+            val x = event.getX().toInt()
+            val y = event.getY().toInt()
+            coordenadas.text = "[x,y] x=%d y=%d".format(x, y)
+            true
+        }
+
+        // FC: conhecendo a entrada pelo acelerômetro
+        val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) as Sensor
+        sensorManager.registerListener(
+                this,
+                accelerometer,
+                SensorManager.SENSOR_DELAY_FASTEST)
+
         // Set up the user interaction to manually show or hide the system UI.
         fullscreen_content.setOnClickListener { toggle() }
 
@@ -64,13 +107,6 @@ class FullscreenActivity : AppCompatActivity() {
 
         myFirstButton.setOnClickListener { bottonClicked() }    // FC: reconhece o click do botão
 
-        // conhecendo a entrada por toque na tela = mostra a coordenada
-        val coordenadas = txtCoords
-        val parent = ralatParent
-        parent.setOnTouchListener { v, event ->
-            coordenadas.text = "[x,y]= ${event.getX().toInt()}, ${event.getY().toInt()}"
-            true
-        }
     }
 
     // FC: Reconhece o click do botão
