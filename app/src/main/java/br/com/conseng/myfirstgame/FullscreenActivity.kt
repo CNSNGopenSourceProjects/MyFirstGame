@@ -17,14 +17,14 @@ import kotlinx.android.synthetic.main.activity_fullscreen.*
  * status bar and navigation/system bar) with user interaction.
  */
 class FullscreenActivity : AppCompatActivity(), SensorEventListener {
-    /**
+    /** ACCELEROMETER
      * Called ONLY when the accuracy of the registered sensor has changed.  Unlike
      * @param accuracy The new accuracy of this sensor, one of "SensorManager.SENSOR_STATUS_*"
      */
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
     }
 
-    /**
+    /**  ACCELEROMETER
      * Called when there is a new sensor event.
      * @param event the {@link android.hardware.SensorEvent SensorEvent}.
      * @since Note that "on changed" is somewhat of a misnomer, as this will also be called if we
