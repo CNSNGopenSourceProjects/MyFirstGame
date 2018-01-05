@@ -26,7 +26,7 @@
         android:layout_height="match_parent"
         android:fitsSystemWindows="true">
 
-        <LinearLayout
+        <RelativeLayout
             android:id="@+id/fullscreen_content_controls"
             style="?metaButtonBarStyle"
             android:layout_width="match_parent"
@@ -44,21 +44,13 @@
                 android:layout_weight="1"
                 android:text="@string/dummy_button" />
 
-        </LinearLayout>
+        </RelativeLayout>
 
-        <LinearLayout
-            android:id="@+id/loParent"
+        <RelativeLayout
+            android:id="@+id/ralatParent"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/txtCoords"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Toque na tela..."
-                android:textAlignment="center" />
 
             <Button
                 android:id="@+id/myFirstButton"
@@ -73,8 +65,33 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/hello_world"
-                android:textAppearance="@style/Base.TextAppearance.AppCompat.Headline" />
-        </LinearLayout>
+                android:textAppearance="@style/Base.TextAppearance.AppCompat.Headline"
+                android:layout_alignBaseline="@+id/myFirstButton"
+                android:layout_alignBottom="@+id/myFirstButton"
+                android:layout_toEndOf="@+id/myFirstButton"/>
+
+            <TextView
+                android:id="@+id/txtCoords"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Toque na tela..."
+                android:textAlignment="center"
+                android:textAppearance="@style/Base.TextAppearance.AppCompat.Headline"
+                android:layout_below="@+id/myFirstButton"
+                android:layout_alignRight="@+id/myFirstButton"
+                android:layout_alignEnd="@+id/myFirstButton"/>
+
+            <TextView
+                android:id="@+id/txtAccel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Accelerometer"
+                android:textAppearance="@style/Base.TextAppearance.AppCompat.Headline"
+                android:layout_below="@+id/txtCoords"
+                android:layout_alignRight="@+id/txtCoords"
+                android:layout_alignEnd="@+id/txtCoords"/>
+        </RelativeLayout>
     </FrameLayout>
 
 </FrameLayout>

@@ -66,7 +66,7 @@ class FullscreenActivity : AppCompatActivity() {
 
         // conhecendo a entrada por toque na tela = mostra a coordenada
         val coordenadas = txtCoords
-        val parent = loParent
+        val parent = ralatParent
         parent.setOnTouchListener { v, event ->
             coordenadas.text = "[x,y]= ${event.getX().toInt()}, ${event.getY().toInt()}"
             true
