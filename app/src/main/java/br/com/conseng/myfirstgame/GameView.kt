@@ -104,15 +104,16 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
      * @since The superclass MUST be called.
      */
     override fun draw(canvas: Canvas?) {
+        super.draw(canvas)      // IT IS A MUST - I ADDED IT
         val scaleFactorX: Float = width.toFloat() / GAME_SURFACE_WIDTH.toFloat()
         val scaleFactorY: Float = height.toFloat() / GAME_SURFACE_HEIGHT.toFloat()
+
         if ((null != canvas) and (null != bgImg)) {
             val savedState = canvas!!.save()
             canvas.scale(scaleFactorX, scaleFactorY)
             bgImg!!.draw(canvas)
             canvas.restoreToCount(savedState)
         }
-        super.draw(canvas)      // IT IS A MUST
     }
 
     /**
