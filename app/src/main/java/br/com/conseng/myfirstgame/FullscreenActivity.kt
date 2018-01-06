@@ -1,191 +1,71 @@
 package br.com.conseng.myfirstgame
 
-import android.content.Context
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import android.os.Bundle
-import android.os.Handler
 import android.support.v7.app.AppCompatActivity
-import android.view.View
-import android.widget.Toast
-import kotlinx.android.synthetic.main.activity_fullscreen.*
+import android.view.Window
+import android.view.WindowManager
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
+ * @constructor Inicia a aplicação do jogo
  */
-class FullscreenActivity : AppCompatActivity(), SensorEventListener {
-    /** ACCELEROMETER
-     * Called ONLY when the accuracy of the registered sensor has changed.  Unlike
-     * @param accuracy The new accuracy of this sensor, one of "SensorManager.SENSOR_STATUS_*"
-     */
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-    }
+class FullscreenActivity : AppCompatActivity() {
 
-    /**  ACCELEROMETER
-     * Called when there is a new sensor event.
-     * @param event the {@link android.hardware.SensorEvent SensorEvent}.
-     * @since Note that "on changed" is somewhat of a misnomer, as this will also be called if we
-     * have a new reading from a sensor with the exact same sensor values (but a newer timestamp).
-     */
-    override fun onSensorChanged(event: SensorEvent?) {
-        val x: Float = event!!.values[0]
-        val y: Float = event.values[1]
-        val z: Float = event.values[2]
-        txtAccel.text = "[x,y,z]\n x=%.3f\n y=%.3f\n z=%.3f".format(x, y, z)
-    }
+//    /** ACCELEROMETER
+//     * Called ONLY when the accuracy of the registered sensor has changed.  Unlike
+//     * @param accuracy The new accuracy of this sensor, one of "SensorManager.SENSOR_STATUS_*"
+//     */
+//    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+//    }
 
-    private val mHideHandler = Handler()
-    private val mHidePart2Runnable = Runnable {
-        // Delayed removal of status and navigation bar
+//    /**  ACCELEROMETER
+//     * Called when there is a new sensor event.
+//     * @param [event] Values from accelerometer sensor All values are in SI units (m/s^2)
+//     *                values[0]: Acceleration minus Gx on the x-axis
+//     *                values[1]: Acceleration minus Gy on the y-axis
+//     *                values[2]: Acceleration minus Gz on the z-axis
+//     * @since Note that "on changed" is somewhat of a misnomer, as this will also be called if we
+//     * have a new reading from a sensor with the exact same sensor values (but a newer timestamp).
+//     * @see [https://developer.android.com/reference/android/hardware/SensorEvent.html]
+//     */
+//    override fun onSensorChanged(event: SensorEvent?) {
+////        val x: Float = event!!.values[0]
+////        val y: Float = event.values[1]
+////        val z: Float = event.values[2]
+////        txtAccel.text = "[x,y,z]\n x=%.3f\n y=%.3f\n z=%.3f".format(x, y, z)
+//    }
 
-        // Note that some of these constants are new as of API 16 (Jelly Bean)
-        // and API 19 (KitKat). It is safe to use them, as they are inlined
-        // at compile-time and do nothing on earlier devices.
-        fullscreen_content.systemUiVisibility =
-                View.SYSTEM_UI_FLAG_LOW_PROFILE or
-                        View.SYSTEM_UI_FLAG_FULLSCREEN or
-                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-                        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-    }
-    private val mShowPart2Runnable = Runnable {
-        // Delayed display of UI elements
-        supportActionBar?.show()
-        fullscreen_content_controls.visibility = View.VISIBLE
-    }
-    private var mVisible: Boolean = false
-    private val mHideRunnable = Runnable { hide() }
+//    /**
+//     * Called when a touch event is dispatched to a view.
+//     * @param [v] The view the touch event has been dispatched to.
+//     * @param [event] The MotionEvent object containing full information about the event.
+//     * @return "True", if the listener has consumed the event, false otherwise.
+//     */
+//    fun onTouch(v: View, event: MotionEvent): Boolean {
+////        val x = event.getX().toInt()
+////        val y = event.getY().toInt()
+////            coordenadas.text = "[x,y] x=%d y=%d".format(x, y)
+//        return true
+//    }
+
     /**
-     * Touch listener to use for in-layout UI controls to delay hiding the
-     * system UI. This is to prevent the jarring behavior of controls going away
-     * while interacting with activity UI.
-     */
-    private val mDelayHideTouchListener = View.OnTouchListener { _, _ ->
-        if (AUTO_HIDE) {
-            delayedHide(AUTO_HIDE_DELAY_MILLIS)
-        }
-        false
-    }
+     * Set for full screen without the title.
+     * On Manifest, set screen orientation to landscape.
+     * @paran [savedInstanceState] If the activity is being re-initialized after previously being
+     *        shut down then this Bundle contains the data it most recently supplied in onSaveInstanceState(Bundle). Note: Otherwise it is null.
 
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_fullscreen)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        // Set our game to full screen mode
+        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN)
 
-        mVisible = true
+        // Set no title on screen
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
 
-        // FC: conhecendo a entrada por toque na tela = mostra a coordenada
-        val coordenadas = txtCoords
-        val parent = ralatParent
-        parent.setOnTouchListener { v, event ->
-            val x = event.getX().toInt()
-            val y = event.getY().toInt()
-            coordenadas.text = "[x,y] x=%d y=%d".format(x, y)
-            true
-        }
-
-        // FC: conhecendo a entrada pelo acelerômetro
-        val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) as Sensor
-        sensorManager.registerListener(
-                this,
-                accelerometer,
-                SensorManager.SENSOR_DELAY_FASTEST)
-
-        // Set up the user interaction to manually show or hide the system UI.
-        fullscreen_content.setOnClickListener { toggle() }
-
-        // Upon interacting with UI controls, delay any scheduled hide()
-        // operations to prevent the jarring behavior of controls going away
-        // while interacting with the UI.
-        dummy_button.setOnTouchListener(mDelayHideTouchListener)
-
-        myFirstButton.setOnClickListener { bottonClicked() }    // FC: reconhece o click do botão
-
-    }
-
-    // FC: Reconhece o click do botão
-    private fun bottonClicked() {
-        myTextView.text = getString(R.string.botao_pressionado)
-    }
-
-    // FC: Reconhece quando o botão de ligar é pressionado e consome
-    override fun onBackPressed() {
-//        super.onBackPressed()
-        Toast.makeText(this, getString(R.string.consome_botao_impresso), Toast.LENGTH_LONG).show()
-    }
-
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        super.onPostCreate(savedInstanceState)
-
-        // Trigger the initial hide() shortly after the activity has been
-        // created, to briefly hint to the user that UI controls
-        // are available.
-        delayedHide(100)
-    }
-
-    private fun toggle() {
-        if (mVisible) {
-            hide()
-        } else {
-            show()
-        }
-    }
-
-    private fun hide() {
-        // Hide UI first
-        supportActionBar?.hide()
-        fullscreen_content_controls.visibility = View.GONE
-        mVisible = false
-
-        // Schedule a runnable to remove the status and navigation bar after a delay
-        mHideHandler.removeCallbacks(mShowPart2Runnable)
-        mHideHandler.postDelayed(mHidePart2Runnable, UI_ANIMATION_DELAY.toLong())
-    }
-
-    private fun show() {
-        // Show the system bar
-        fullscreen_content.systemUiVisibility =
-                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-                        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-        mVisible = true
-
-        // Schedule a runnable to display UI elements after a delay
-        mHideHandler.removeCallbacks(mHidePart2Runnable)
-        mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY.toLong())
-    }
-
-    /**
-     * Schedules a call to hide() in [delayMillis], canceling any
-     * previously scheduled calls.
-     */
-    private fun delayedHide(delayMillis: Int) {
-        mHideHandler.removeCallbacks(mHideRunnable)
-        mHideHandler.postDelayed(mHideRunnable, delayMillis.toLong())
-    }
-
-    companion object {
-        /**
-         * Whether or not the system UI should be auto-hidden after
-         * [AUTO_HIDE_DELAY_MILLIS] milliseconds.
-         */
-        private val AUTO_HIDE = true
-
-        /**
-         * If [AUTO_HIDE] is set, the number of milliseconds to wait after
-         * user interaction before hiding the system UI.
-         */
-        private val AUTO_HIDE_DELAY_MILLIS = 3000
-
-        /**
-         * Some older devices needs a small delay between UI widget updates
-         * and a change of the status and navigation bar.
-         */
-        private val UI_ANIMATION_DELAY = 300
+        setContentView(GameView(this))
     }
 }
