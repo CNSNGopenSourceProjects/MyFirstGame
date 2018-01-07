@@ -53,8 +53,8 @@ class FullscreenActivity : AppCompatActivity() {
      * Set for full screen without the title.
      * On Manifest, set screen orientation to landscape.
      * @paran [savedInstanceState] If the activity is being re-initialized after previously being
-     *        shut down then this Bundle contains the data it most recently supplied in onSaveInstanceState(Bundle). Note: Otherwise it is null.
-
+     *        shut down then this Bundle contains the data it most recently supplied in onSaveInstanceState(Bundle).
+     *        Note: Otherwise it is null.
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

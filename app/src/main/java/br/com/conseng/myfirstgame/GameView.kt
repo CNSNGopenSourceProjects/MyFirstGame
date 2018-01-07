@@ -14,6 +14,10 @@ const val GAME_SURFACE_WIDTH = 1920
  * Altura da superfície do jogo.
  */
 const val GAME_SURFACE_HEIGHT = 1080
+/**
+ * Default displacement for background scrooling.
+ */
+const val GAME_MOVING_SPEED = -5
 
 /**
  * Implements the game logic.
@@ -76,13 +80,22 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     }
 
     /**
+     * Container for the playeer character object.
+     */
+    private var playerCharacter: PlayerCharacter? = null
+
+    /**
      * Load the background image and define the game scroll displacement, before start the game.
      * @param [holder] The SurfaceHolder whose surface is being created.
      * @see [https://developer.android.com/reference/android/view/SurfaceHolder.Callback.html#surfaceCreated(android.view.SurfaceHolder)]
      */
     override fun surfaceCreated(holder: SurfaceHolder?) {
         bgImg = BackgroundImage(BitmapFactory.decodeResource(resources, R.drawable.background_image))
-        bgImg!!.setVector(-5)
+        // Load the player character on game
+        val d = resources.getDrawable(R.drawable.player_run)
+        val w = d.intrinsicWidth
+        val h = d.intrinsicHeight
+        playerCharacter = PlayerCharacter(BitmapFactory.decodeResource(resources, R.drawable.player_run), w / 3, h, 3)
         // We can safely start the game loop
         mainThread!!.running = true
         mainThread!!.start()
@@ -112,6 +125,7 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
             val savedState = canvas!!.save()
             canvas.scale(scaleFactorX, scaleFactorY)
             bgImg!!.draw(canvas)
+            playerCharacter!!.draw(canvas)
             canvas.restoreToCount(savedState)
         }
     }
@@ -121,6 +135,7 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
      */
     fun update() {
         bgImg!!.update()
+        playerCharacter!!.update()
     }
 
     /**

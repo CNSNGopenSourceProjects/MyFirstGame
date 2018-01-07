@@ -22,15 +22,15 @@ class BackgroundImage(private val backgroundImage: Bitmap) {
      * Save the displacement to be used on the background image scrolling in x axis.
      * =0, means no scrolling.
      */
-    private var dxc: Int = 0
+    private var dxc: Int = GAME_MOVING_SPEED
 
-    /**
-     * Define the displacement to be used to scroll the background image in x axis.
-     * @param[dxc] The new displacement in x axis.
-     */
-    fun setVector(dxc: Int) {
-        this.dxc = dxc
-    }
+//    /**
+//     * Define the displacement to be used to scroll the background image in x axis.
+//     * @param[dxc] The new displacement in x axis.
+//     */
+//    fun setVector(dxc: Int) {
+//        this.dxc = dxc
+//    }
 
     /**
      * Scroll the background image by the displacement defined by [setVector].

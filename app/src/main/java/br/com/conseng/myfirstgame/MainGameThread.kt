@@ -5,9 +5,9 @@ import android.view.SurfaceHolder
 import java.lang.Exception
 
 /**
- * Calls the game drawing logic to update the image at specific frame rate.
+ * Calls the game drawing logic to update the image at specific getBitmap rate.
  * @param [surfaceHolder] To manipulate the screen pixel area by cavas.
- * @param [gameView] To draw each game frame.
+ * @param [gameView] To draw each game getBitmap.
  * @constructor Controls the game image update refresh rate.
  */
 class MainGameThread(private val surfaceHolder: SurfaceHolder, private val gameView: GameView) : Thread() {
@@ -17,7 +17,7 @@ class MainGameThread(private val surfaceHolder: SurfaceHolder, private val gameV
     var running: Boolean = false
 
     /**
-     * The game frame will be updated 30 times per second.
+     * The game getBitmap will be updated 30 times per second.
      */
     private val framesPerSecond: Int = 30
 
@@ -27,12 +27,12 @@ class MainGameThread(private val surfaceHolder: SurfaceHolder, private val gameV
     private var averageFPS: Double = 0.0
 
     /**
-     * Saves the current frame.
+     * Saves the current getBitmap.
      */
     private var canvas: Canvas? = null
 
     /**
-     * Run the game, frame by frame.
+     * Run the game, getBitmap by getBitmap.
      */
     override fun run() {
         // Statistics variables
@@ -68,7 +68,7 @@ class MainGameThread(private val surfaceHolder: SurfaceHolder, private val gameV
                 }
             }
 
-            // One frame delay - compute the missing time
+            // One getBitmap delay - compute the missing time
             timeMillis = (System.nanoTime() - startTime) / 1000000
             waitTime = targetTime - timeMillis
             if (waitTime > 0) {
