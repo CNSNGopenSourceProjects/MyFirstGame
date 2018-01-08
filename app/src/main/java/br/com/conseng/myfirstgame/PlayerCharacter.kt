@@ -1,5 +1,12 @@
 package br.com.conseng.myfirstgame
 
+/**************************************************************************************************
+ * Histírico da implementação:
+ * 20180107     F.Camargo       Acrescentado um jogador que anda sembre na mesma posição.
+ * 20180107     F.Camargo       Acréscimo de obstáculos e prêmios.  Jogador pula quando tela tocada.
+ *                              Removida a variável dya e colocado limite vertical de movimentação.
+ **************************************************************************************************/
+
 import android.graphics.Bitmap
 import android.graphics.Canvas
 
@@ -15,18 +22,6 @@ import android.graphics.Canvas
  */
 class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, private val h: Int, private val numberOfFrames: Int, private val delay: Int = 10) :
         GameObj() {
-    /**
-     * TODO: o que faz isso?
-     */
-    private var dya: Double = 0.0
-
-    /**
-     * Reset the DYA.
-     */
-    fun resetDYA() {
-        dya = 0.0
-    }
-
     /**
      * Defines if the player is active or not.
      */
@@ -56,9 +51,14 @@ class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, priva
     private var startTime: Long = 0
 
     /**
-     * The player will jump when 'true'.
+     * While 'true', the player must go up to jump obstacles.
+     * While 'false', the player must be walking.
      */
     var up: Boolean = false
+
+    // Start coordinate of the player character.
+    private val PLAYER_START_XC = 100
+    private val PLAYER_START_YC = GAME_SURFACE_HEIGHT / 2
 
     /**
      * Initialize the character parameters.
@@ -70,8 +70,8 @@ class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, priva
         if (numberOfFrames < 1) throw IllegalArgumentException("The number of frames must be higher than zero: numberOfFrames=%d".format(numberOfFrames))
 
         // Set the initial position of the character and define no moviment on y axis.
-        xc = 100
-        yc = GAME_SURFACE_HEIGHT / 2
+        xc = PLAYER_START_XC
+        yc = PLAYER_START_YC
         dyc = 0
 
         // Saves the character 2D size.
@@ -96,6 +96,13 @@ class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, priva
             startTime = System.nanoTime()
         }
         ac.update()
+
+        // Control the player jumping, using the acceleration factor the boundaries.
+        val jump = if (up) dyc - 1 else dyc + 1
+        dyc = if (jump > 10) 10 else if (jump < -10) -10 else jump
+//        yc = PLAYER_START_YC + 4 * dyc
+        yc += 2 * dyc
+        if (yc < 0) yc = 0 else if (yc >= (GAME_SURFACE_HEIGHT - objHeight)) yc = GAME_SURFACE_HEIGHT - objHeight
     }
 
     /**
