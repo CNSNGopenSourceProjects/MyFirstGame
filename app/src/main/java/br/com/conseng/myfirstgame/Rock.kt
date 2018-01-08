@@ -2,7 +2,8 @@ package br.com.conseng.myfirstgame
 
 /**************************************************************************************************
  * Histírico da implementação:
- * 20180108     F.Camargo       Acréscimo deste obstáculos: a rocha.
+ * 20180108     F.Camargo       Acréscimo deste obstáculos: a rocha.  Acrescentada opção para auto
+ *                              geração de rochas, sempre que esta ultrapassa a borda esquerda da tela.
  **************************************************************************************************/
 
 import android.graphics.Canvas
@@ -15,15 +16,24 @@ import kotlin.math.min
  * @param [ac] The player sprite animation characteristics.
  * @param [scoreWeight] Define the obstacle score.
  * @param [delay] Character animation delay.  Default=10.
+ * @param [autoPlay] If 'true', hurls a new rock when the rock reach the left side of the screen.
+ *
  * @throws [IllegalArgumentException] If [delay] is negative or zero.
  */
-class Rock(private val ac: AnimationClass, private val scoreWeight: Int, private val delay: Int = 100) :
+class Rock(private val ac: AnimationClass, private val scoreWeight: Int,
+           private val delay: Int = 100, val autoPlay: Boolean = true) :
         GameObj() {
+
 //    /**
 //     * Defines if the obstacle is active or not.
 //     */
 //    var playing: Boolean = false
 
+    /**
+     * Goes 'true' when the rock goes out of the screen.
+     */
+    var out: Boolean = false
+        private set
     /**
      * Necessary to randomize the rock behaviour.
      */
@@ -34,10 +44,17 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int, private
      */
     private var speed: Int = 7
 
-//    /**
-//     * Saves the initial time for score logic.
-//     */
-//    private var startTime: Long = 0
+    /**
+     * Informs the time this object has been created (ns).
+     */
+    var startTime: Long = 0
+        private set
+
+    /**
+     * Informs how long the rock is on the screen (ms).
+     */
+    var rockElapsed: Long = 0
+        private set
 
     // Start coordinate of the rock obstacle.
     /**
@@ -72,7 +89,8 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int, private
         val next = xc + dxc
         val newRock: Boolean = next <= -objWidth
         if (newRock) {                      // The rock disappear on left side?
-            hurlsRock()                     // YES, a new rock will start on right side
+            out = true                      // YES, informs it
+            if (autoPlay) hurlsRock()           // If enabled, a new rock will start on right side
         } else {
             xc = next
         }
@@ -118,7 +136,8 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int, private
         ac.delay = delay
         objWidth = ac.frameWidth
         objHeight = ac.frameHeight
-//        startTime = System.nanoTime()
+        startTime = System.nanoTime()
+        rockElapsed = startTime
     }
 
     /**
@@ -126,11 +145,11 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int, private
      * upper and lower bounds.
      */
     fun update() {
-//        val elapsed = (System.nanoTime() - startTime) / 1000000
-        if (!updateX()) updateY()           // Update the rock position
-        ac.update()
-
-//        startTime = System.nanoTime()
+        if (autoPlay or !out) {
+            if (!updateX()) updateY()           // Update the rock position
+            ac.update()
+            rockElapsed = (System.nanoTime() - startTime) / 1000000
+        }
     }
 
     /**
@@ -140,10 +159,12 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int, private
      * @since The superclass MUST be called.
      */
     fun draw(canvas: Canvas?) {
-        try {
-            canvas!!.drawBitmap(ac.getBitmap, floatXc, floatYc, null)
-        } catch (e: Exception) {
-            println("ERROR WHILE DRAWING THE ROCK: ${e.message}")
+        if (autoPlay or !out) {
+            try {
+                canvas!!.drawBitmap(ac.getBitmap, floatXc, floatYc, null)
+            } catch (e: Exception) {
+                println("ERROR WHILE DRAWING THE ROCK: ${e.message}")
+            }
         }
     }
 

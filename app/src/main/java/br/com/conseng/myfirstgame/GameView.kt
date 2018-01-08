@@ -7,6 +7,7 @@ package br.com.conseng.myfirstgame
  * 20180107     F.Camargo       Acréscimo de obstáculos e prêmios.  Jogador pula quando tela tocada.
  * 20180108     F.Camargo       Acréscimo da lógica de interferência para os obstáculos.
  *                              Prevê multiplas rochas sendo lançadas no jogo.
+ *                              Evita loop infinito no surfaceDestroyed().
  **************************************************************************************************/
 
 import android.content.Context
@@ -15,6 +16,7 @@ import android.graphics.Canvas
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import java.util.*
 
 /**
  * Largura da superfície do jogo.
@@ -43,12 +45,26 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     /**
      * Saves the game background image managing object.
      */
-    private var bgImg: BackgroundImage? = null
+    private var bgImg: BackgroundImage = BackgroundImage(BitmapFactory.decodeResource(resources, R.drawable.background_image))
+
+    /**
+     * Container for the player character frames.
+     */
+    private val playerFrames = SpriteFrames(resources, R.drawable.player_run, 1, 3)
+
+    /**
+     * Container for the rock frames to be shared by various rocks.
+     */
+    private val rockFrames = SpriteFrames(resources, R.drawable.rock, 3, 1)
 
     /**
      * Start the game.
      */
     init {
+        // Load all images to share data and save memory
+//        playerFrames = SpriteFrames(resources, R.drawable.player_run, 1, 3)
+//        rockFrames = SpriteFrames(resources, R.drawable.rock, 3, 1)
+
         // Set callback to the surfaceholder to track events
         holder.addCallback(this)
         mainThread = MainGameThread(holder, this)
@@ -77,15 +93,18 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
      **/
     override fun surfaceDestroyed(holder: SurfaceHolder?) {
         var retry = true
-        while (retry) {
+        var counter = 1000
+
+        while (retry and (counter > 0)) {
+            counter--                   // Avoid infinite loop
             try {
                 mainThread!!.running = false
                 mainThread!!.join()
+                retry = false
             } catch (e: InterruptedException) {
                 println("ERROR WHILE TRYING TO END GAME")
                 e.printStackTrace()
             }
-            retry = false
         }
     }
 
@@ -95,9 +114,9 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     private var playerCharacter: PlayerCharacter? = null
 
     /**
-     * Container for the obstacle rock object.
+     * Saves all rocks created in the game.
      */
-    private var obstacleRock: Rock? = null
+    private var rocks = ArrayList<Rock>()
 
     /**
      * Load the background image and define the game scroll displacement, before start the game.
@@ -105,15 +124,12 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
      * @see [https://developer.android.com/reference/android/view/SurfaceHolder.Callback.html#surfaceCreated(android.view.SurfaceHolder)]
      */
     override fun surfaceCreated(holder: SurfaceHolder?) {
-        bgImg = BackgroundImage(BitmapFactory.decodeResource(resources, R.drawable.background_image))
+//        bgImg = BackgroundImage(BitmapFactory.decodeResource(resources, R.drawable.background_image))
         // Load the player character in the game
-        val sprite1 = SpriteFrames(resources, R.drawable.player_run, 1, 3)
-        val ac1 = AnimationClass(sprite1)
+        val ac1 = AnimationClass(playerFrames)
         playerCharacter = PlayerCharacter(ac1)
-        // Load the rock obstacle in the game
-        val sprite2 = SpriteFrames(resources, R.drawable.rock, 3, 1)
-        val ac2 = AnimationClass(sprite2)
-        obstacleRock = Rock(ac2, 100)
+        // Add the first rock in the game
+        addNewRock()
 //        // We can safely start the game loop
 //        mainThread!!.running = true
 //        mainThread!!.start()
@@ -165,13 +181,36 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
         val scaleFactorX: Float = width.toFloat() / GAME_SURFACE_WIDTH.toFloat()
         val scaleFactorY: Float = height.toFloat() / GAME_SURFACE_HEIGHT.toFloat()
 
-        if ((null != canvas) and (null != bgImg)) {
-            val savedState = canvas!!.save()
+        if (null != canvas) {
+            val savedState = canvas.save()
             canvas.scale(scaleFactorX, scaleFactorY)
-            bgImg!!.draw(canvas)
+            bgImg.draw(canvas)
             playerCharacter!!.draw(canvas)
-            obstacleRock!!.draw(canvas)
+            for (rock in rocks) {
+                rock.draw(canvas)
+            }
             canvas.restoreToCount(savedState)
+        }
+    }
+
+    /**
+     * Maximum number of rocks that will be in the game.
+     */
+    private val maximumNumberOfRocks = 10
+
+    /**
+     * Minimum interval to add a new rock to the game.
+     */
+    private val minimumRockInterval = 4000
+
+    /**
+     * Add a new rock in the game if the number of active rocks is not higher than [maximumNumberOfRocks].
+     */
+    private fun addNewRock() {
+        if (rocks.size < maximumNumberOfRocks) {
+            // Load the rock obstacle in the game
+            val ac = AnimationClass(rockFrames)
+            rocks.add(Rock(ac, 100))
         }
     }
 
@@ -179,9 +218,15 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
      * Update the background image drawing.
      */
     fun update() {
-        bgImg!!.update()
+        bgImg.update()
         playerCharacter!!.update()
-        obstacleRock!!.update()
+        // Creates multiple rocks
+        for (rock in rocks) {
+            rock.update()
+        }
+        if (rocks.isEmpty() or (rocks[rocks.size - 1].rockElapsed > minimumRockInterval)) {
+            addNewRock()
+        }
     }
 
     /**
@@ -189,8 +234,8 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
      * @return The current [x,y] coordinate and the dx displacement.
      */
     override fun toString(): String {
-        val backgroung = if (null == bgImg) "NONE" else "LOADED"
+//        val backgroung = if (null == bgImg) "NONE" else "LOADED"
         val thread = if (null == mainThread) "NONE" else if (mainThread!!.running) "RUNNING" else "STOPPED"
-        return "background=$backgroung - status:$thread"
+        return "rocks=${rocks.size} - status:$thread"
     }
 }
