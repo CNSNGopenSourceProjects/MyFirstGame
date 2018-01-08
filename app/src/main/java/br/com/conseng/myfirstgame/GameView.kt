@@ -107,15 +107,13 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     override fun surfaceCreated(holder: SurfaceHolder?) {
         bgImg = BackgroundImage(BitmapFactory.decodeResource(resources, R.drawable.background_image))
         // Load the player character in the game
-        var d = resources.getDrawable(R.drawable.player_run)
-        var w = d.intrinsicWidth
-        var h = d.intrinsicHeight
-        playerCharacter = PlayerCharacter(BitmapFactory.decodeResource(resources, R.drawable.player_run), w / 3, h, 3)
+        val sprite1 = SpriteFrames(resources, R.drawable.player_run, 1, 3)
+        val ac1 = AnimationClass(sprite1)
+        playerCharacter = PlayerCharacter(ac1)
         // Load the rock obstacle in the game
-        d = resources.getDrawable(R.drawable.rock)
-        w = d.intrinsicWidth
-        h = d.intrinsicHeight
-        obstacleRock = Rock(BitmapFactory.decodeResource(resources, R.drawable.rock), w , h/ 3, 3, 100)
+        val sprite2 = SpriteFrames(resources, R.drawable.rock, 3, 1)
+        val ac2 = AnimationClass(sprite2)
+        obstacleRock = Rock(ac2, 100)
 //        // We can safely start the game loop
 //        mainThread!!.running = true
 //        mainThread!!.start()

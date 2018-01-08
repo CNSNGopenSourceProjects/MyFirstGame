@@ -7,21 +7,16 @@ package br.com.conseng.myfirstgame
  *                              Removida a variável dya e colocado limite vertical de movimentação.
  **************************************************************************************************/
 
-import android.graphics.Bitmap
 import android.graphics.Canvas
 
 /**
  * Container for the player character logic.
  * @constructor Creates the player character logic loading the frames images and the character size.
- * @param [spriteSheet] Bitmap with all character frames.
- * @param [w] Individual character width in pixels.
- * @param [h] Individual character height in pixels.
- * @param [numberOfFrames] Number of frames.
+ * @param [ac] The player sprite animation characteristics.
  * @param [delay] Character animation delay.  Default=10.
- * @throws [IllegalArgumentException] If [numberOfFrames], [w], [h] or [delay] is negative or zero.
+ * @throws [IllegalArgumentException] If [delay] is negative or zero.
  */
-class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, private val h: Int,
-                      private val numberOfFrames: Int, private val delay: Int = 10) :
+class PlayerCharacter(private val ac: AnimationClass, private val delay: Int = 10) :
         GameObj() {
     /**
      * Defines if the player is active or not.
@@ -42,11 +37,6 @@ class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, priva
     }
 
     /**
-     * Save the player sprite animation characteristics.
-     */
-    private var ac: AnimationClass
-
-    /**
      * Saves the initial time for score logic.
      */
     private var startTime: Long = 0
@@ -65,19 +55,15 @@ class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, priva
      * Initialize the character parameters.
      */
     init {
-        // Validate the parameters
-        if (w < 1) throw IllegalArgumentException("The character width must be higher than zero: w=%s".format(w)) else objWidth = w
-        if (h < 1) throw IllegalArgumentException("The character height must be higher than zero: h=%s".format(h)) else objHeight = h
-        if (numberOfFrames < 1) throw IllegalArgumentException("The number of frames must be higher than zero: numberOfFrames=%d".format(numberOfFrames))
-
         // Initialize the character sprite animation.
-        // Set the initial position of the character and define no moviment on y axis.
+        // Set the initial position of the character and define no movement on y axis.
         xc = getInitialX
         yc = getInitialY
         dyc = 0
 
-        ac = AnimationClass(spriteSheet, w, h, numberOfFrames)
         ac.delay = delay
+        objWidth = ac.frameWidth
+        objHeight = ac.frameHeight
 
         startTime = System.nanoTime()
     }
@@ -109,7 +95,7 @@ class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, priva
      */
     fun draw(canvas: Canvas?) {
         try {
-            canvas!!.drawBitmap(ac.getBitmap, xc.toFloat(), yc.toFloat(), null)
+            canvas!!.drawBitmap(ac.getBitmap, floatXc, floatYc, null)
         } catch (e: Exception) {
             println("ERROR WHILE DRAWING THE PLAYER: ${e.message}")
         }
@@ -120,6 +106,6 @@ class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, priva
      * @return Informs the sprite animation status.
      */
     override fun toString(): String {
-        return "score=$score - delay=$delay - numberOfFrames:$numberOfFrames - ${super.toString()}"
+        return "score=$score - delay=$delay - numberOfFrames=${ac.numberOfFrames} - ${super.toString()}"
     }
 }

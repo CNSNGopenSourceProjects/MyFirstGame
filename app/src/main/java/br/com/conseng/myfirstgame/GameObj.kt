@@ -11,14 +11,48 @@ import android.graphics.Rect
  * Abstract class for all future game objects.
  */
 abstract class GameObj {
-    // Our x and y coordinates along with their displacement variables
+    /**
+     * Current position of the object on x-axis.
+     */
     var xc: Int = 0
+
+    /**
+     * Current position of the object on y-axis.
+     */
     var yc: Int = 0
+
+    /**
+     * The object displacement on x-axis.
+     * Positive values, moves the object left to right on the screen.
+     */
     var dxc: Int = 0
+
+    /**
+     * The object displacement on y-axis.
+     * Positive values, moves the object top-down on the screen.
+     */
     var dyc: Int = 0
 
-    // Width and height of our objects
+    /**
+     * Current position of the object on x-axis, but as Float.
+     */
+    val floatXc
+        get() = xc.toFloat()
+
+    /**
+     * Current position of the object on y-axis, but as Float.
+     */
+    val floatYc
+        get() = yc.toFloat()
+
+    /**
+     * The object width.
+     */
     var objWidth: Int = 0
+
+    /**
+     * The object height.
+     */
     var objHeight: Int = 0
 
     /**

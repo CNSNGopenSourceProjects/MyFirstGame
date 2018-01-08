@@ -5,7 +5,6 @@ package br.com.conseng.myfirstgame
  * 20180108     F.Camargo       Acréscimo deste obstáculos: a rocha.
  **************************************************************************************************/
 
-import android.graphics.Bitmap
 import android.graphics.Canvas
 import java.util.*
 import kotlin.math.min
@@ -13,16 +12,12 @@ import kotlin.math.min
 /**
  * Container for the rock obstacle logic.
  * @constructor Creates the rock obstacle logic loading the frames images and the character size.
- * @param [spriteSheet] Bitmap with all character frames.
- * @param [w] Individual character width in pixels.
- * @param [h] Individual character height in pixels.
- * @param [numberOfFrames] Number of frames.
+ * @param [ac] The player sprite animation characteristics.
  * @param [scoreWeight] Define the obstacle score.
  * @param [delay] Character animation delay.  Default=10.
- * @throws [IllegalArgumentException] If [numberOfFrames], [w], [h] or [delay] is negative or zero.
+ * @throws [IllegalArgumentException] If [delay] is negative or zero.
  */
-class Rock(private val spriteSheet: Bitmap, private val w: Int, private val h: Int,
-           private val numberOfFrames: Int, private val scoreWeight: Int, private val delay: Int = 100) :
+class Rock(private val ac: AnimationClass, private val scoreWeight: Int, private val delay: Int = 100) :
         GameObj() {
 //    /**
 //     * Defines if the obstacle is active or not.
@@ -38,11 +33,6 @@ class Rock(private val spriteSheet: Bitmap, private val w: Int, private val h: I
      * Saves the rock speed.
      */
     private var speed: Int = 7
-
-    /**
-     * Save the obstacle sprite animation characteristics.
-     */
-    private var ac: AnimationClass
 
 //    /**
 //     * Saves the initial time for score logic.
@@ -124,17 +114,10 @@ class Rock(private val spriteSheet: Bitmap, private val w: Int, private val h: I
      * Initialize the character parameters, hurling the rock with random position and speed.
      */
     init {
-        // Validate the parameters
-        if (w < 1) throw IllegalArgumentException("The character width must be higher than zero: w=%s".format(w)) else objWidth = w
-        if (h < 1) throw IllegalArgumentException("The character height must be higher than zero: h=%s".format(h)) else objHeight = h
-        if (numberOfFrames < 1) throw IllegalArgumentException("The number of frames must be higher than zero: numberOfFrames=%d".format(numberOfFrames))
-
         hurlsRock()
-
-        // Initialize the character sprite animation.
-        ac = AnimationClass(spriteSheet, w, h, numberOfFrames, false)
         ac.delay = delay
-
+        objWidth = ac.frameWidth
+        objHeight = ac.frameHeight
 //        startTime = System.nanoTime()
     }
 
@@ -158,7 +141,7 @@ class Rock(private val spriteSheet: Bitmap, private val w: Int, private val h: I
      */
     fun draw(canvas: Canvas?) {
         try {
-            canvas!!.drawBitmap(ac.getBitmap, xc.toFloat(), yc.toFloat(), null)
+            canvas!!.drawBitmap(ac.getBitmap, floatXc, floatYc, null)
         } catch (e: Exception) {
             println("ERROR WHILE DRAWING THE ROCK: ${e.message}")
         }
@@ -169,6 +152,6 @@ class Rock(private val spriteSheet: Bitmap, private val w: Int, private val h: I
      * @return Informs the sprite animation status.
      */
     override fun toString(): String {
-        return "scoreWeight=$scoreWeight - speed=$speed - numberOfFrames:$numberOfFrames - ${super.toString()}"
+        return "scoreWeight=$scoreWeight - speed=$speed - numberOfFrames=${ac.numberOfFrames} - ${super.toString()}"
     }
 }
