@@ -1,5 +1,10 @@
 package br.com.conseng.myfirstgame
 
+/**************************************************************************************************
+ * Histírico da implementação:
+ * 20180107     F.Camargo       Criação da classe de base comum a todos os objetos.
+ **************************************************************************************************/
+
 import android.graphics.Rect
 
 /**
@@ -9,7 +14,7 @@ abstract class GameObj {
     // Our x and y coordinates along with their displacement variables
     var xc: Int = 0
     var yc: Int = 0
-    var dcx: Int = 0
+    var dxc: Int = 0
     var dyc: Int = 0
 
     // Width and height of our objects

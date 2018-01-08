@@ -1,17 +1,27 @@
 package br.com.conseng.myfirstgame
 
+/**************************************************************************************************
+ * Histírico da implementação:
+ * 20180107     F.Camargo       Criação da classe de animação comum a todos os objetos.
+ * 20180108     F.Camargo       Extrai frames na horizontal ou na vertical.
+ **************************************************************************************************/
+
 import android.graphics.Bitmap
 
 /**
  * Execute the sprite animation on the screen.
  * @constructor Extracts the individual frames from the collection bitmap and get ready for sprite animation.
- * @param [spriteSheet] Collection bitmap with all character frames.
+ * @param [spriteSheet] Bitmap collection with all character frames.
  * @param [w] Individual character width in pixels.
  * @param [h] Individual character height in pixels.
  * @param [numberOfFrames] Number of frames.
+ * @param [horizontalFrames] Informs how the [spriteSheet] is orginized:
+ *                           =true, frames organized horizontally (x-axis).
+ *                           =false, frames organized vertically (y-axis).
  * @throws [IllegalArgumentException] If [numberOfFrames], [w] or [h] is negative or zero.
  */
-class AnimationClass(private val spriteSheet: Bitmap, private val w: Int, private val h: Int, private val numberOfFrames: Int) {
+class AnimationClass(private val spriteSheet: Bitmap, private val w: Int, private val h: Int,
+                     private val numberOfFrames: Int, private val horizontalFrames: Boolean = true) {
     /**
      * Saves the initial time to control the getBitmap change cadence.
      */
@@ -27,7 +37,9 @@ class AnimationClass(private val spriteSheet: Bitmap, private val w: Int, privat
      */
     init {
         // Load the animation frames, extracting slice-by-slice from the bitmap, in the animation class.
-        this.frames = Array(numberOfFrames, { i -> Bitmap.createBitmap(spriteSheet, i * w, 0, w, h) })
+        this.frames = if (horizontalFrames)
+            Array(numberOfFrames, { i -> Bitmap.createBitmap(spriteSheet, i * w, 0, w, h) }) else
+            Array(numberOfFrames, { i -> Bitmap.createBitmap(spriteSheet, 0, i * h, w, h) })
         this.startTime = System.nanoTime()
     }
 

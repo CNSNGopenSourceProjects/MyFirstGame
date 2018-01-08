@@ -5,6 +5,8 @@ package br.com.conseng.myfirstgame
  * 20180106     F.Camargo       Implementada a carga do fundo e seu deslocamento.
  * 20180107     F.Camargo       Acrescentado um jogador que anda sembre na mesma posição.
  * 20180107     F.Camargo       Acréscimo de obstáculos e prêmios.  Jogador pula quando tela tocada.
+ * 20180108     F.Camargo       Acréscimo da lógica de interferência para os obstáculos.
+ *                              Prevê multiplas rochas sendo lançadas no jogo.
  **************************************************************************************************/
 
 import android.content.Context
@@ -88,9 +90,14 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     }
 
     /**
-     * Container for the playeer character object.
+     * Container for the player character object.
      */
     private var playerCharacter: PlayerCharacter? = null
+
+    /**
+     * Container for the obstacle rock object.
+     */
+    private var obstacleRock: Rock? = null
 
     /**
      * Load the background image and define the game scroll displacement, before start the game.
@@ -99,11 +106,16 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
      */
     override fun surfaceCreated(holder: SurfaceHolder?) {
         bgImg = BackgroundImage(BitmapFactory.decodeResource(resources, R.drawable.background_image))
-        // Load the player character on game
-        val d = resources.getDrawable(R.drawable.player_run)
-        val w = d.intrinsicWidth
-        val h = d.intrinsicHeight
+        // Load the player character in the game
+        var d = resources.getDrawable(R.drawable.player_run)
+        var w = d.intrinsicWidth
+        var h = d.intrinsicHeight
         playerCharacter = PlayerCharacter(BitmapFactory.decodeResource(resources, R.drawable.player_run), w / 3, h, 3)
+        // Load the rock obstacle in the game
+        d = resources.getDrawable(R.drawable.rock)
+        w = d.intrinsicWidth
+        h = d.intrinsicHeight
+        obstacleRock = Rock(BitmapFactory.decodeResource(resources, R.drawable.rock), w , h/ 3, 3, 100)
 //        // We can safely start the game loop
 //        mainThread!!.running = true
 //        mainThread!!.start()
@@ -160,6 +172,7 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
             canvas.scale(scaleFactorX, scaleFactorY)
             bgImg!!.draw(canvas)
             playerCharacter!!.draw(canvas)
+            obstacleRock!!.draw(canvas)
             canvas.restoreToCount(savedState)
         }
     }
@@ -170,6 +183,7 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     fun update() {
         bgImg!!.update()
         playerCharacter!!.update()
+        obstacleRock!!.update()
     }
 
     /**

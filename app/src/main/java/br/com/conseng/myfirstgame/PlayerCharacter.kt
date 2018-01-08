@@ -20,7 +20,8 @@ import android.graphics.Canvas
  * @param [delay] Character animation delay.  Default=10.
  * @throws [IllegalArgumentException] If [numberOfFrames], [w], [h] or [delay] is negative or zero.
  */
-class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, private val h: Int, private val numberOfFrames: Int, private val delay: Int = 10) :
+class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, private val h: Int,
+                      private val numberOfFrames: Int, private val delay: Int = 10) :
         GameObj() {
     /**
      * Defines if the player is active or not.
@@ -56,29 +57,25 @@ class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, priva
      */
     var up: Boolean = false
 
-    // Start coordinate of the player character.
-    private val PLAYER_START_XC = 100
-    private val PLAYER_START_YC = GAME_SURFACE_HEIGHT / 2
+    // Define the initial coordinates of the player character.
+    private val getInitialX = 100
+    private val getInitialY = GAME_SURFACE_HEIGHT / 2
 
     /**
      * Initialize the character parameters.
      */
     init {
         // Validate the parameters
-        if (w < 1) throw IllegalArgumentException("The character width must be higher than zero: w=%s".format(w))
-        if (h < 1) throw IllegalArgumentException("The character height must be higher than zero: h=%s".format(h))
+        if (w < 1) throw IllegalArgumentException("The character width must be higher than zero: w=%s".format(w)) else objWidth = w
+        if (h < 1) throw IllegalArgumentException("The character height must be higher than zero: h=%s".format(h)) else objHeight = h
         if (numberOfFrames < 1) throw IllegalArgumentException("The number of frames must be higher than zero: numberOfFrames=%d".format(numberOfFrames))
 
+        // Initialize the character sprite animation.
         // Set the initial position of the character and define no moviment on y axis.
-        xc = PLAYER_START_XC
-        yc = PLAYER_START_YC
+        xc = getInitialX
+        yc = getInitialY
         dyc = 0
 
-        // Saves the character 2D size.
-        objHeight = h
-        objWidth = w
-
-        // Initialize the character sprite animation.
         ac = AnimationClass(spriteSheet, w, h, numberOfFrames)
         ac.delay = delay
 
@@ -98,10 +95,9 @@ class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, priva
         ac.update()
 
         // Control the player jumping, using the acceleration factor the boundaries.
-        val jump = if (up) dyc - 1 else dyc + 1
-        dyc = if (jump > 10) 10 else if (jump < -10) -10 else jump
-//        yc = PLAYER_START_YC + 4 * dyc
-        yc += 2 * dyc
+        dyc = if (up) dyc - 2 else dyc + 2
+        if (dyc >= 20) dyc = 20 else if (dyc <= -20) dyc = -20
+        yc += dyc
         if (yc < 0) yc = 0 else if (yc >= (GAME_SURFACE_HEIGHT - objHeight)) yc = GAME_SURFACE_HEIGHT - objHeight
     }
 
@@ -112,7 +108,11 @@ class PlayerCharacter(private val spriteSheet: Bitmap, private val w: Int, priva
      * @since The superclass MUST be called.
      */
     fun draw(canvas: Canvas?) {
-        canvas!!.drawBitmap(ac.getBitmap, xc.toFloat(), yc.toFloat(), null)
+        try {
+            canvas!!.drawBitmap(ac.getBitmap, xc.toFloat(), yc.toFloat(), null)
+        } catch (e: Exception) {
+            println("ERROR WHILE DRAWING THE PLAYER: ${e.message}")
+        }
     }
 
     /**
