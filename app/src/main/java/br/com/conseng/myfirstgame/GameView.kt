@@ -8,14 +8,17 @@ package br.com.conseng.myfirstgame
  * 20180108     F.Camargo       Acréscimo da lógica de interferência para os obstáculos.
  *                              Prevê multiplas rochas sendo lançadas no jogo.
  *                              Evita loop infinito no surfaceDestroyed().
+ *                              Implementa a lógica de colisão.
  **************************************************************************************************/
 
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import android.widget.Toast
 import java.util.*
 
 /**
@@ -58,13 +61,14 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     private val rockFrames = SpriteFrames(resources, R.drawable.rock, 3, 1)
 
     /**
+     * Container for the explosion.
+     */
+    private val explosionFrames = SpriteFrames(resources, R.drawable.explosion, 5, 5)
+
+    /**
      * Start the game.
      */
     init {
-        // Load all images to share data and save memory
-//        playerFrames = SpriteFrames(resources, R.drawable.player_run, 1, 3)
-//        rockFrames = SpriteFrames(resources, R.drawable.rock, 3, 1)
-
         // Set callback to the surfaceholder to track events
         holder.addCallback(this)
         mainThread = MainGameThread(holder, this)
@@ -119,6 +123,11 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     private var rocks = ArrayList<Rock>()
 
     /**
+     * Container for the explosion object.
+     */
+    private var blast: Explosion? = null
+
+    /**
      * Load the background image and define the game scroll displacement, before start the game.
      * @param [holder] The SurfaceHolder whose surface is being created.
      * @see [https://developer.android.com/reference/android/view/SurfaceHolder.Callback.html#surfaceCreated(android.view.SurfaceHolder)]
@@ -130,6 +139,10 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
         playerCharacter = PlayerCharacter(ac1)
         // Add the first rock in the game
         addNewRock()
+        // Add the explosion to end the game
+        val ac2 = AnimationClass(explosionFrames)
+        blast = Explosion(ac2)
+
 //        // We can safely start the game loop
 //        mainThread!!.running = true
 //        mainThread!!.start()
@@ -189,6 +202,7 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
             for (rock in rocks) {
                 rock.draw(canvas)
             }
+            if (explosion) blast!!.draw(canvas)
             canvas.restoreToCount(savedState)
         }
     }
@@ -215,17 +229,45 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     }
 
     /**
+     * Check the rock collision with the player character using the algorithm of the Bounding Box Collision.
+     * @param [rock] The rock position on the screen.
+     * @param [player] The player character position on the screen.
+     * @return 'true´ if collided.
+     */
+    private fun collision(rock: Rock, player: PlayerCharacter): Boolean
+            = Rect.intersects(rock.getRectangle(), player.getRectangle())
+
+    /**
+     * Must shown the explosion since the player hit a rock.
+     */
+    private var explosion = false
+
+    /**
      * Update the background image drawing.
      */
     fun update() {
-        bgImg.update()
-        playerCharacter!!.update()
-        // Creates multiple rocks
-        for (rock in rocks) {
-            rock.update()
-        }
-        if (rocks.isEmpty() or (rocks[rocks.size - 1].rockElapsed > minimumRockInterval)) {
-            addNewRock()
+        if (playerCharacter!!.playing) {
+            bgImg.update()
+            playerCharacter!!.update()
+            // Handle multiple rocks
+            for (i in rocks.indices) {          // Stop the game on collision
+                rocks[i].update()
+                if (collision(rocks[i], playerCharacter!!)) {
+                    playerCharacter!!.playing = false
+                    explosion = true
+                    blast!!.doExplosion(rocks[i].xc, rocks[i].yc)
+                    rocks.removeAt(i)               // Remove the rock that hit the player
+                    Toast.makeText(context, "Game over: you hit a rock!", Toast.LENGTH_LONG).show()
+                    break
+                }
+            }
+            if (!explosion and
+                    (rocks.isEmpty() or
+                            (rocks[rocks.size - 1].rockElapsed > minimumRockInterval))) {
+                addNewRock()            // Add new rocks on secific intervals
+            }
+        } else if(explosion) {
+            blast!!.update()
         }
     }
 
