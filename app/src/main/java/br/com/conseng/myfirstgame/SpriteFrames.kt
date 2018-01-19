@@ -15,12 +15,17 @@ import android.graphics.BitmapFactory
  * @param [res] The resources object containing the image data.
  * @param [id] The resource id of the image data
  * @param [rows] Number of rows on the image collection.
- *  param [columns] Number of columns on the image collection.
+ * @param [columns] Number of columns on the image collection.
+ * @param [setHeight] Define the frame height.
+ *                    If zero (default), calculate the height by the number of frames.
+ * @param [setWidth] Define the frame width.
+ *                   If zero (default), calculate the width by the number of frames.
  * @throws [IllegalArgumentException] If [rows] or [columns] is lower than 1.
  * @throws [NotFoundException] If [id] does not exist.
  */
 class SpriteFrames(private val res: Resources, private val id: Int,
-                   private val rows: Int, private val columns: Int) {
+                   private val rows: Int, private val columns: Int,
+                   private val setHeight: Int = 0, private val setWidth: Int = 0) {
 
     /**
      * Load the sprite frames and start timing.
@@ -31,19 +36,19 @@ class SpriteFrames(private val res: Resources, private val id: Int,
     /**
      * Informs the number os images available for the sprite animation.
      */
-    var numberOfFrames :Int = 0
-    private set
+    var numberOfFrames: Int = 0
+        private set
 
     /**
      * The height of each frame image used in the animation.
      */
-    var frameHeight:Int = 0
+    var frameHeight: Int = 0
         private set
 
     /**
      * The width of each frame image used in the animation.
      */
-    var frameWidth:Int = 0
+    var frameWidth: Int = 0
         private set
 
     /**
@@ -51,14 +56,14 @@ class SpriteFrames(private val res: Resources, private val id: Int,
      */
     init {
         // Validate the parameters
-        if (rows < 1) throw IllegalArgumentException("The number of rows must be higher than zero: w=%s".format(rows))
-        if (columns < 1) throw IllegalArgumentException("The number of columns must be higher than zero: w=%s".format(columns))
+        if (rows < 1) throw IllegalArgumentException("The number of rows must be higher than zero: w=%d".format(rows))
+        if (columns < 1) throw IllegalArgumentException("The number of columns must be higher than zero: w=%d".format(columns))
         // Get the sprite collection image from resource
         val spriteCollection: Bitmap? = BitmapFactory.decodeResource(res, id)
         if (null == spriteCollection) throw Resources.NotFoundException("Invalid resource id: %d".format(id))
         // Extract the frames from the sprite collection image.
-        frameWidth = spriteCollection.width / columns
-        frameHeight = spriteCollection.height / rows
+        frameWidth = if (setWidth > 0) setWidth else spriteCollection.width / columns
+        frameHeight = if (setHeight > 0) setHeight else spriteCollection.height / rows
         numberOfFrames = rows * columns
         this.frames = Array(numberOfFrames, { i ->
             val c = i % columns

@@ -14,7 +14,7 @@ import android.graphics.Canvas
  * @param [delay] Character animation delay.  Default=10.
  * @throws [IllegalArgumentException] If [delay] is negative or zero.
  */
-class Explosion(private val ac: AnimationClass, private val delay: Int = 10) :
+class ExplosionEffect(private val ac: AnimationClass, private val delay: Int = 10) :
         GameObj() {
     /**
      * Defines if the explosion is active or not.
@@ -45,6 +45,9 @@ class Explosion(private val ac: AnimationClass, private val delay: Int = 10) :
      * Initialize the character parameters.
      */
     init {
+        // Validate the parameters
+        if (delay < 1) throw IllegalArgumentException("The delay must be higher than zero: delay=%d".format(delay))
+        // Initialize the rock sprite animation.
         ac.delay = delay
         objWidth = ac.frameWidth
         objHeight = ac.frameHeight
@@ -65,7 +68,6 @@ class Explosion(private val ac: AnimationClass, private val delay: Int = 10) :
      * Render the explosion using the current animation getBitmap.
      * @param [canvas] The Canvas to which the View is rendered.
      * @see [https://developer.android.com/reference/android/view/SurfaceView.html#draw(android.graphics.Canvas)]
-     * @since The superclass MUST be called.
      */
     fun draw(canvas: Canvas?) {
         if (playing) {              // Shows the explosion a single time

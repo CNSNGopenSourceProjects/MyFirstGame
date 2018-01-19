@@ -7,6 +7,7 @@ package br.com.conseng.myfirstgame
  **************************************************************************************************/
 
 import android.graphics.Canvas
+import java.security.InvalidParameterException
 import java.util.*
 import kotlin.math.min
 
@@ -17,23 +18,18 @@ import kotlin.math.min
  * @param [scoreWeight] Define the obstacle score.
  * @param [delay] Character animation delay.  Default=10.
  * @param [autoPlay] If 'true', hurls a new rock when the rock reach the left side of the screen.
- *
  * @throws [IllegalArgumentException] If [delay] is negative or zero.
  */
 class Rock(private val ac: AnimationClass, private val scoreWeight: Int,
            private val delay: Int = 100, val autoPlay: Boolean = true) :
         GameObj() {
 
-//    /**
-//     * Defines if the obstacle is active or not.
-//     */
-//    var playing: Boolean = false
-
     /**
      * Goes 'true' when the rock goes out of the screen.
      */
     var out: Boolean = false
         private set
+
     /**
      * Necessary to randomize the rock behaviour.
      */
@@ -100,17 +96,21 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int,
     /**
      * Move the rock on diagonal.
      * Reverse the direction when hit the boundary.
+     * @param [boundaryHeight] Consider the boundary height on the rock bouncing.
      * @see [updateX] If a new rock started on right side, do not execute this method.
      */
-    private fun updateY() {
+    private fun updateY(boundaryHeight: Int) {
+        if ((boundaryHeight < 0) or (boundaryHeight > (GAME_SURFACE_HEIGHT / 3)))
+            throw InvalidParameterException("The boundary offset is out of the range: %d".format(boundaryHeight))
+
         val next = yc + dyc
         when {
-            next > GAME_SURFACE_HEIGHT - objHeight -> {
-                yc = GAME_SURFACE_HEIGHT - objHeight
+            next > GAME_SURFACE_HEIGHT - objHeight - boundaryHeight -> {
+                yc = GAME_SURFACE_HEIGHT - objHeight - boundaryHeight
                 dyc = -dyc
             }
-            next < 0 -> {
-                yc = 0
+            next < boundaryHeight -> {
+                yc = boundaryHeight
                 dyc = -dyc
             }
             else -> yc = next
@@ -132,6 +132,9 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int,
      * Initialize the character parameters, hurling the rock with random position and speed.
      */
     init {
+        // Validate the parameters
+        if (delay < 1) throw IllegalArgumentException("The delay must be higher than zero: delay=%d".format(delay))
+        // Initialize the rock sprite animation.
         hurlsRock()
         ac.delay = delay
         objWidth = ac.frameWidth
@@ -141,12 +144,13 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int,
     }
 
     /**
-     * Create a loop of events that assign a score to the obstacle and keep the obstacle between the
-     * upper and lower bounds.
+     * Move the rock up and down inside the screen boundaries.
+     * Move the rock right to left.
+     * @param [boundaryHeight] Consider the boundary height on the rock bouncing.
      */
-    fun update() {
+    fun update(boundaryHeight: Int) {
         if (autoPlay or !out) {
-            if (!updateX()) updateY()           // Update the rock position
+            if (!updateX()) updateY(boundaryHeight)
             ac.update()
             rockElapsed = (System.nanoTime() - startTime) / 1000000
         }
@@ -156,7 +160,6 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int,
      * Render the rock obstacle using the current animation getBitmap.
      * @param [canvas] The Canvas to which the View is rendered.
      * @see [https://developer.android.com/reference/android/view/SurfaceView.html#draw(android.graphics.Canvas)]
-     * @since The superclass MUST be called.
      */
     fun draw(canvas: Canvas?) {
         if (autoPlay or !out) {

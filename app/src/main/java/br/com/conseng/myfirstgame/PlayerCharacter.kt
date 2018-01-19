@@ -37,6 +37,13 @@ class PlayerCharacter(private val ac: AnimationClass, private val delay: Int = 1
     }
 
     /**
+     * Initialize the player character displacement.
+     */
+    fun resetDYC() {
+        dyc = 0
+    }
+
+    /**
      * Saves the initial time for score logic.
      */
     private var startTime: Long = 0
@@ -55,12 +62,13 @@ class PlayerCharacter(private val ac: AnimationClass, private val delay: Int = 1
      * Initialize the character parameters.
      */
     init {
-        // Initialize the character sprite animation.
+        // Validate the parameters
+        if (delay < 1) throw IllegalArgumentException("The delay must be higher than zero: delay=%d".format(delay))
         // Set the initial position of the character and define no movement on y axis.
         xc = getInitialX
         yc = getInitialY
         dyc = 0
-
+        // Initialize the character sprite animation.
         ac.delay = delay
         objWidth = ac.frameWidth
         objHeight = ac.frameHeight
@@ -91,7 +99,6 @@ class PlayerCharacter(private val ac: AnimationClass, private val delay: Int = 1
      * Render the player character using the current animation getBitmap.
      * @param [canvas] The Canvas to which the View is rendered.
      * @see [https://developer.android.com/reference/android/view/SurfaceView.html#draw(android.graphics.Canvas)]
-     * @since The superclass MUST be called.
      */
     fun draw(canvas: Canvas?) {
         try {

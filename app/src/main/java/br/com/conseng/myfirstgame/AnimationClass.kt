@@ -51,7 +51,7 @@ class AnimationClass(private val spriteFrames: SpriteFrames) {
      *    Any attempt to set a value higher than [frames] array boundary, goes to first valid index.
      * @throws [IllegalArgumentException] If the new frame index is negative or higher than sprite array size.
      */
-    var frameIndex = 0
+    private var frameIndex = 0
         set(value) {
             when {
                 value < 0 -> {
@@ -132,6 +132,6 @@ class AnimationClass(private val spriteFrames: SpriteFrames) {
      * @return Informs the number of frames and the current getBitmap.
      */
     override fun toString(): String {
-        return "numberOfFrames=${numberOfFrames} - frameIndex=$frameIndex - delay=$delay"
+        return "numberOfFrames=$numberOfFrames - frameIndex=$frameIndex - delay=$delay"
     }
 }
