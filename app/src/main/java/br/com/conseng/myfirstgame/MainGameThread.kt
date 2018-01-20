@@ -3,6 +3,7 @@ package br.com.conseng.myfirstgame
 import android.graphics.Canvas
 import android.view.SurfaceHolder
 import java.lang.Exception
+import kotlin.math.max
 
 /**
  * Calls the game drawing logic to update the image at specific getBitmap rate.
@@ -27,7 +28,7 @@ class MainGameThread(private val surfaceHolder: SurfaceHolder, private val gameV
     private var averageFPS: Double = 0.0
 
     /**
-     * Saves the current getBitmap.
+     * Saves the current canvas used to draw the game images.
      */
     private var canvas: Canvas? = null
 
@@ -44,6 +45,7 @@ class MainGameThread(private val surfaceHolder: SurfaceHolder, private val gameV
 
         val targetTime: Long = 1000 / framesPerSecond.toLong()
 
+        println("STARTING THE MAIN GAME LOOP...")
         while (running) {
             startTime = System.nanoTime()
             canvas = null
@@ -51,12 +53,17 @@ class MainGameThread(private val surfaceHolder: SurfaceHolder, private val gameV
             // Try locking the canvas for pixel editing
             try {
                 canvas = this.surfaceHolder.lockCanvas()
-                synchronized(surfaceHolder) {
-                    this.gameView.update()
-                    this.gameView.draw(canvas)
+                if (null == canvas)
+                    println("GAME-THREAD WHILE FAIL TO LOCK THE CANVAS")
+                else {
+                    synchronized(surfaceHolder) {
+                        this.gameView.update()
+                        this.gameView.draw(canvas)
+                    }
                 }
             } catch (e: Exception) {
-                println("GAME-THREAD WHILE ERROR LOCKING CANVAS: ${e.message}")
+                println("GAME-THREAD EXCEPTION ON UPDATE OR DRAW: ${e.message}")
+                e.printStackTrace()
             } finally {
                 if (null != canvas) {
                     try {
@@ -70,13 +77,11 @@ class MainGameThread(private val surfaceHolder: SurfaceHolder, private val gameV
 
             // One getBitmap delay - compute the missing time
             timeMillis = (System.nanoTime() - startTime) / 1000000
-            waitTime = targetTime - timeMillis
-            if (waitTime > 0) {
-                try {
-                    sleep(waitTime)
-                } catch (e: Exception) {
-                    println("GAME-THREAD ERROR WHILE SLEEPING: ${e.message}")
-                }
+            waitTime = max(5, (targetTime - timeMillis))
+            try {
+                sleep(waitTime)
+            } catch (e: Exception) {
+                println("GAME-THREAD ERROR WHILE SLEEPING: ${e.message}")
             }
 
             // update the game statistics
@@ -89,6 +94,8 @@ class MainGameThread(private val surfaceHolder: SurfaceHolder, private val gameV
                 println("averageFPS=$averageFPS")
             }
         }
+        println("THE MAIN GAME LOOP HAS BEEN ENDED")
+
     }
 
     /**

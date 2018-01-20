@@ -19,8 +19,19 @@ class ExplosionEffect(private val ac: AnimationClass, private val delay: Int = 1
     /**
      * Defines if the explosion is active or not.
      */
-    var playing: Boolean = false
-        private set
+    private var playing = false
+
+    /**
+     * Initialize the character parameters.
+     */
+    init {
+        // Validate the parameters
+        if (delay < 1) throw IllegalArgumentException("The delay must be higher than zero: delay=%d".format(delay))
+        // Initialize the rock sprite animation.
+        ac.delay = delay
+        this.objWidth = ac.frameWidth
+        this.objHeight = ac.frameHeight
+    }
 
     /**
      * Start the sequence of explosion on a specific position.
@@ -32,25 +43,23 @@ class ExplosionEffect(private val ac: AnimationClass, private val delay: Int = 1
         if ((x < 0) or (x >= GAME_SURFACE_WIDTH))
             throw IllegalArgumentException("The coordenate of the x-axis is out of the screen=%s".format(x))
         else
-            xc = x
+            this.xc = x
         if ((y < 0) or (y >= GAME_SURFACE_HEIGHT))
             throw IllegalArgumentException("The coordenate of the y-axis is out of the screen=%s".format(y))
         else
-            yc = y
-        playing = true
-        update()
+            this.yc = y
+        ac.resetFrame()
+        ac.delay = delay
+        this.playing = true
+//        update()
     }
 
     /**
-     * Initialize the character parameters.
+     * Be ready for nexte explosion.
      */
-    init {
-        // Validate the parameters
-        if (delay < 1) throw IllegalArgumentException("The delay must be higher than zero: delay=%d".format(delay))
-        // Initialize the rock sprite animation.
-        ac.delay = delay
-        objWidth = ac.frameWidth
-        objHeight = ac.frameHeight
+    fun reset() {
+        this.playing = false
+        ac.resetFrame()
     }
 
     /**
@@ -60,7 +69,7 @@ class ExplosionEffect(private val ac: AnimationClass, private val delay: Int = 1
     fun update() {
         if (playing) {              // Shows the explosion a single time
             ac.update()
-            playing = !ac.playedOnce
+            if (ac.playedOnce) this.playing = false
         }
     }
 

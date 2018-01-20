@@ -65,6 +65,6 @@ abstract class GameObj {
      * @return Informs the sprite position and size.
      */
     override fun toString(): String {
-        return "position=[$xc,$yc] - width=$objWidth - height:$objHeight"
+        return "position=[$xc,$yc] - displacement=[$dxc,$dyc] - width=$objWidth - height:$objHeight"
     }
 }

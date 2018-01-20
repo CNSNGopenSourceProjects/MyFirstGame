@@ -15,16 +15,9 @@ import android.graphics.Bitmap
  */
 class AnimationClass(private val spriteFrames: SpriteFrames) {
     /**
-     * Saves the initial time to control the getBitmap change cadence.
+     * Saves the initial time (milliseconds) to control the getBitmap change cadence.
      */
-    private var startTime: Long = 0
-
-    /**
-     * Extracts the individual frames from the collection bitmap and get ready for sprite animation.
-     */
-    init {
-        this.startTime = System.nanoTime()
-    }
+    private var startTime: Long =  System.currentTimeMillis()
 
     /**
      * Informa o numero de frames disponíveis para a animação do sprite.
@@ -43,6 +36,19 @@ class AnimationClass(private val spriteFrames: SpriteFrames) {
      */
     val frameWidth:Int
         get() = spriteFrames.frameWidth
+
+    /**
+     * Animation interval (milliseconds) used on this sprite animation.
+     * @throws [IllegalArgumentException] The delay cannot be set with a negative value.
+     */
+    var delay: Int = 10
+        set(value) {
+            if (value < 0) {
+                throw IllegalArgumentException("The delay cannot be negative: value=%d".format(value))
+            } else {
+                field = value
+            }
+        }
 
     /**
      * The getBitmap index current shown in the sprite.
@@ -99,17 +105,13 @@ class AnimationClass(private val spriteFrames: SpriteFrames) {
     }
 
     /**
-     * Animation interval used on this sprite animation.
-     * @throws [IllegalArgumentException] The delay cannot be set with a negative value.
+     * Be ready for another explosion.
      */
-    var delay: Int = 0
-        set(value) {
-            if (value < 0) {
-                throw IllegalArgumentException("The delay cannot be negative: value=%d".format(value))
-            } else {
-                field = value
-            }
-        }
+    fun resetFrame() {
+        frameIndex = 0
+        playedOnce = false
+        this.startTime = System.currentTimeMillis()
+    }
 
     /**
      * Goes 'true' when all sprites frames had been displayed.
@@ -120,10 +122,10 @@ class AnimationClass(private val spriteFrames: SpriteFrames) {
      * Update the getBitmap to be displayed after [delay] interval.
      */
     fun update() {
-        val elapsed = (System.nanoTime() - startTime) / 1000000
+        val elapsed = System.currentTimeMillis() - startTime
         if (elapsed > delay) {
             playedOnce = playedOnce or nextFrame()      // Makes it 'true' when all frames had been shown.
-            this.startTime = System.nanoTime()
+            this.startTime = System.currentTimeMillis()
         }
     }
 

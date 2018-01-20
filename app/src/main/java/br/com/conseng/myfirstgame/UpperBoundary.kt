@@ -14,12 +14,12 @@ import android.graphics.Canvas
  * @param [ac] The upper boundary sprite animation characteristics.
  * @param [x] The boundary position on X-axis
  * @param [y] The boundary position on Y-axis
- * @param [delay] Character animation delay.  Default=10.
+ * @param [delay] Character animation delay.  Default=100.
  * @throws [IllegalArgumentException] If [x] or [y] is negative.
  * @throws [IllegalArgumentException] If [delay] is negative or zero.
  */
 class UpperBoundary(private val ac: AnimationClass, private val x: Int,
-                    private val y: Int, private val delay: Int = 10) :
+                    private val y: Int, private val delay: Int = 100) :
         GameObj() {
 
     /**

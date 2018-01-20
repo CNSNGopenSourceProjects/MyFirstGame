@@ -106,12 +106,12 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     /**
      * Minimum height used on upper and lower boundaries.
      */
-    private var minBoundaryHeight = 0
+    private var minBoundaryHeight = 5
 
     /**
      * Maximum height used on upper and lower boundaries.
      */
-    private var maxBoundaryHeight = 0
+    private var maxBoundaryHeight = 30
 
     /**
      * Saves the highest score in the game.
@@ -129,17 +129,19 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     private var startReset: Long = 0
 
     /**
+     * Flag indicating the game was running (true) by the first time.
+     */
+    private var userStartedGame = false
+
+    /**
      * Flag indicating when the user request to play again (true).
      */
     private var newGameCreated = false
+
     /**
-     * Flag indicating a new game must be started (true) by user request.
+     * Flag indicating game over.
      */
-    private var reset = false
-    /**
-     * Flag indicating the game was running (true).
-     */
-    private var started = false
+    private var gameOver = false
 
     /**
      * Start the game.
@@ -218,11 +220,12 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
             MotionEvent.ACTION_DOWN -> {                    // Touching the screen
                 if (playerCharacter!!.playing) {                // Is playing?
                     playerCharacter!!.up = true                 // YES, move the player up
-                    if (!started) started = true
-                    reset = false
-                } else if (newGameCreated and reset) {          // Game starting?
-                    playerCharacter!!.playing = true            // YES, run
+                    gameOver = false
+                } else if (!userStartedGame or                  // First run?
+                        (newGameCreated and gameOver)) {        // Game restarted?
+                    playerCharacter!!.playing = true            // YES, run the game
                     playerCharacter!!.up = true
+                    userStartedGame = true
                 }
                 return true
             }
@@ -237,70 +240,6 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
     }
 
     /**
-     * Update the background image drawing.
-     */
-    fun update() {
-        if (playerCharacter!!.playing) {
-            // Stop playing if the game boundaries have not been set
-            if (lowerBoundary.isEmpty() or upperBoundary.isEmpty()) {
-                playerCharacter!!.playing = false
-                return
-            }
-            // Update the game scenarious
-            bgImg.update()
-            playerCharacter!!.update()
-            // Update the game boundaries
-            updateUpperBound()
-            updateLowerBound()
-            // Update the boundaries limit
-            maxBoundaryHeight = 30 + (playerCharacter!!.score / progressDenom)
-            if (maxBoundaryHeight > (GAME_SURFACE_HEIGHT / 4)) maxBoundaryHeight = GAME_SURFACE_HEIGHT / 4
-            minBoundaryHeight = 5 + (playerCharacter!!.score / progressDenom)
-            if (minBoundaryHeight > (GAME_SURFACE_HEIGHT / 8)) minBoundaryHeight = GAME_SURFACE_HEIGHT / 8
-            // On collision with the boundaries, the game will stop
-            for (i in lowerBoundary.indices) {
-                if (collision(lowerBoundary[i], playerCharacter!!)) {
-                    playerCharacter!!.playing = false
-                    return
-                }
-            }
-            for (i in upperBoundary.indices) {
-                if (collision(upperBoundary[i], playerCharacter!!)) {
-                    playerCharacter!!.playing = false
-                    return
-                }
-            }
-            // Spawn rocks on screen.  On collision with any rock, the game will stop
-            for (i in rocks.indices) {
-                rocks[i].update(minBoundaryHeight)
-                if (collision(rocks[i], playerCharacter!!)) {
-                    playerCharacter!!.playing = false
-                    rocks.removeAt(i)               // Remove the rock that hit the player
-                    return
-                }
-            }
-            if (playerCharacter!!.playing and
-                    (rocks.isEmpty() or
-                            (rocks[rocks.size - 1].rockElapsed > minimumRockInterval))) {
-                addNewRock()            // Add new rocks at specific intervals
-            }
-        } else {                            // The game is over
-            playerCharacter!!.resetDYC()
-            if (!reset) {                           // The game just ended?
-                reset = true                        // YES, shows the explosion on player character
-                newGameCreated = false
-                startReset = System.nanoTime()
-                explosionEffect!!.doExplosion(playerCharacter!!.xc, playerCharacter!!.yc)
-            }
-            explosionEffect!!.update()
-            val elapsed = (System.nanoTime() - startReset) / 1000000
-            if (!newGameCreated and (elapsed > 10000)) {        // Restart the game after 10 seconds
-                newGame()
-            }
-        }
-    }
-
-    /**
      * Check the a collision between two game objects using the algorithm of the Bounding Box Collision.
      * @param [a] The position of one object on the screen.
      * @param [b] The position of another object on the screen.
@@ -310,22 +249,252 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
 
     /**
      * Maximum number of rocks that will be in the game.
+     * @return The maximum number of rocks, that increases with the game score.
      */
-    private val maximumNumberOfRocks = 5
+    private fun maximumNumberOfRocks(): Int = 1 + playerCharacter!!.score / 200
 
     /**
-     * Minimum interval to add a new rock to the game.
+     * Minimum interval (in milliseconds) to add a new rock to the game.
      */
-    private val minimumRockInterval = 5000
+    private val minimumRockInterval: Long = 7000
+
+    /**
+     * Indicates how the rock that left the screen must be handled:
+     * If 'true', the rock must be moved to the right side of the screen.
+     * If 'false', the rock must be killed and a new one generated (faster).
+     */
+    private val autoRockPlay = false
 
     /**
      * Add a new rock in the game if the number of active rocks is not higher than [maximumNumberOfRocks].
+     * The rock speed increases with the score.
+     *
      */
     private fun addNewRock() {
-        if (rocks.size < maximumNumberOfRocks) {
-            // Load the rock obstacle in the game
+        var mayAdd = if (rocks.isEmpty()) true else if (rocks.size >= maximumNumberOfRocks()) false else rocks[rocks.size - 1].rockElapsed > minimumRockInterval
+
+        if (mayAdd) {               // Add another rock obstacle in the game
             val ac = AnimationClass(rockFrames)
-            rocks.add(Rock(ac, 100))
+            rocks.add(Rock(ac, max(100, playerCharacter!!.score), autoRockPlay))
+        }
+    }
+
+    /**
+     * Necessary to randomize the boundary height.
+     */
+    private var rnd = Random()
+
+    /**
+     * Default width of each boundary segment.
+     */
+    private val defaultBoundaryWidth = 20
+
+    /**
+     * Define de boundaries start position.
+     */
+    private var boundaryStartX = GAME_SURFACE_WIDTH - defaultBoundaryWidth
+
+    /**
+     * Load the upper boundary array to restrict the player character moving area.
+     * Increase the boundary height considering the modulus 50 of the score.
+     */
+    private fun updateUpperBound() {
+        for (i in upperBoundary.indices) {
+            upperBoundary[i].update()
+            if (upperBoundary[i].xc < -defaultBoundaryWidth) {
+                // Remove the segment out of the screen
+                upperBoundary.removeAt(i)
+                // Define the variation for the new segment
+                val lastHeight = upperBoundary[upperBoundary.size - 1].objHeight
+                if (lastHeight >= maxBoundaryHeight) {
+                    upBound = false
+                } else if (lastHeight <= minBoundaryHeight) {
+                    upBound = true
+                }
+                // Append a new segment at the end of the boundary with the incremental height
+                val h = if (upBound) {
+                    lastHeight + 1
+                } else {
+                    lastHeight - 1
+                }
+                val x = upperBoundary[upperBoundary.size - 1].xc + defaultBoundaryWidth
+                addNewUpperBoundary(x, h)
+            }
+        }
+        // Increase the boundary sequence as it moves, adding new elements at the end
+        if (upperBoundary.isEmpty()) {
+            addNewUpperBoundary(boundaryStartX, 0)
+        } else if (upperBoundary.isEmpty() or (upperBoundary[upperBoundary.size - 1].xc < GAME_SURFACE_WIDTH)) {
+            val x = upperBoundary[upperBoundary.size - 1].xc + defaultBoundaryWidth
+            addNewUpperBoundary(x, 0)
+        }
+    }
+
+    /**
+     * Add a new upper boundary segment into the array.
+     * @param [x] The segment position on X-axis.
+     * @param [height] The segment height. If zero, compute a random height.
+     */
+    private fun addNewUpperBoundary(x: Int, height: Int = 0) {
+        val h = if (height > 0) height else max(minBoundaryHeight, (rnd.nextDouble() * maxBoundaryHeight.toDouble() + 1).toInt())
+        val boundaryFrames = SpriteFrames(resources, R.drawable.ground, 1, 1, h, defaultBoundaryWidth)
+        val ac = AnimationClass(boundaryFrames)
+        val newBoundary = UpperBoundary(ac, x, 0)
+        upperBoundary.add(newBoundary)
+    }
+
+    /**
+     * Load the lower boundary array to restrict the player character moving area.
+     * Increase the boundary height considering the modulus 40 of the score.
+     */
+    private fun updateLowerBound() {
+        for (i in lowerBoundary.indices) {
+            lowerBoundary[i].update()
+            if (lowerBoundary[i].xc < -defaultBoundaryWidth) {
+                // Remove the segment out of the screen
+                lowerBoundary.removeAt(i)
+                // Define the variation for the new segment
+                val lastHeight = lowerBoundary[lowerBoundary.size - 1].objHeight
+                if (lastHeight >= maxBoundaryHeight) {
+                    lowBound = false
+                } else if (lastHeight <= minBoundaryHeight) {
+                    lowBound = true
+                }
+                // Append a new segment at the end of the boundary with the incremental height
+                val h = if (lowBound) {
+                    lastHeight + 1
+                } else {
+                    lastHeight - 1
+                }
+                val x = lowerBoundary[lowerBoundary.size - 1].xc + defaultBoundaryWidth
+                addNewLowerBoundary(x, h)
+            }
+        }
+        // Increase the boundary sequence as it moves, adding new elements at the end
+        if (lowerBoundary.isEmpty()) {
+            addNewLowerBoundary(boundaryStartX, 0)
+        } else if (lowerBoundary[lowerBoundary.size - 1].xc <= GAME_SURFACE_WIDTH - defaultBoundaryWidth) {
+            val x = lowerBoundary[lowerBoundary.size - 1].xc + defaultBoundaryWidth
+            addNewLowerBoundary(x, 0)
+        }
+    }
+
+    /**
+     * Add a new lower boundary segment into the array.
+     * @param [x] The segment position on X-axis.
+     * @param [height] The segment height. If zero, compute a random height.
+     */
+    private fun addNewLowerBoundary(x: Int, height: Int = 0) {
+        val h = if (height > 0) height else max(minBoundaryHeight, (rnd.nextDouble() * maxBoundaryHeight.toDouble() + 1).toInt())
+        val boundaryFrames = SpriteFrames(resources, R.drawable.ground, 1, 1, h, defaultBoundaryWidth)
+        val ac = AnimationClass(boundaryFrames)
+        val newBoundary = LowerBoundary(ac, x, GAME_SURFACE_HEIGHT - h)
+        lowerBoundary.add(newBoundary)
+    }
+
+    /**
+     * Start a new game.
+     * Update the best score before clear the players score for the new run.
+     */
+    private fun newGame() {
+        // Purge all arrays for the new round
+        explosionEffect!!.reset()
+        rocks.clear()
+        lowerBoundary.clear()
+        upperBoundary.clear()
+        minBoundaryHeight = 5
+        maxBoundaryHeight = 30
+        // Saves the best score before clear the score for a new round.
+        if (playerCharacter!!.score > bestScore) {
+            bestScore = playerCharacter!!.score
+        }
+        playerCharacter!!.resetScore()
+        playerCharacter!!.resetDYC()
+        playerCharacter!!.yc = GAME_SURFACE_HEIGHT / 2
+        // Initialize the boundaries
+        var x = boundaryStartX
+        var h = minBoundaryHeight
+        while (x < (GAME_SURFACE_WIDTH + defaultBoundaryWidth)) {
+            addNewUpperBoundary(x, h)
+            addNewLowerBoundary(x, h)
+            x += defaultBoundaryWidth
+            h = 0
+        }
+        // On each new game the boundaries start closer
+        boundaryStartX -= defaultBoundaryWidth
+        if (boundaryStartX < 0) boundaryStartX = 0
+        // Start the new round
+        newGameCreated = true
+    }
+
+    /**
+     * Update the background image drawing.
+     */
+    fun update() {
+        if (userStartedGame) {          // The user must start the game before begin the update
+            if (playerCharacter!!.playing) {
+                // Update the game scenarious
+                bgImg.update()
+                playerCharacter!!.update()
+                // Update the game boundaries
+                updateUpperBound()
+                updateLowerBound()
+                // Update the boundaries limit with focus on the area near the player character
+                maxBoundaryHeight = 30 + (playerCharacter!!.score / progressDenom)
+                if (maxBoundaryHeight > (GAME_SURFACE_HEIGHT / 4)) maxBoundaryHeight = GAME_SURFACE_HEIGHT / 4
+                minBoundaryHeight = 5 + (playerCharacter!!.score / progressDenom)
+                if (minBoundaryHeight > (GAME_SURFACE_HEIGHT / 8)) minBoundaryHeight = GAME_SURFACE_HEIGHT / 8
+                if ((playerCharacter!!.yc + playerCharacter!!.objHeight) >= (GAME_SURFACE_HEIGHT - 2 * maxBoundaryHeight)) {
+                    // Check if the player collided with the lower bouundary.  If the player is higher, don't need to check.
+                    for (i in lowerBoundary.indices) {
+                        if ((playerCharacter!!.xc + playerCharacter!!.objWidth + maxBoundaryHeight) < lowerBoundary[i].xc)
+                            break                       // Do not weist time for segments too far away
+                        else if (collision(lowerBoundary[i], playerCharacter!!)) {
+                            playerCharacter!!.playing = false
+                            return
+                        }
+                    }
+                } else if (playerCharacter!!.yc <= (2 * maxBoundaryHeight)) {
+                    // Check if the player collided with the upper bouundary.  If the player is lower, don't need to check.
+                    for (i in upperBoundary.indices) {
+                        if ((playerCharacter!!.xc + playerCharacter!!.objWidth + maxBoundaryHeight) < upperBoundary[i].xc)
+                            break                       // Do not weist time for segments too far away
+                        else if (collision(upperBoundary[i], playerCharacter!!)) {
+                            playerCharacter!!.playing = false
+                            return
+                        }
+                    }
+                }
+                // Spawn rocks on screen.
+                for (i in rocks.indices) {
+                    rocks[i].update(minBoundaryHeight)
+                    if (rocks[i].out and !autoRockPlay)
+                        rocks.removeAt(i)               // Remove the rock that move out of the screen
+                }
+                // On collision with any rock, the game will stop
+                for (i in rocks.indices) {
+                    if (collision(rocks[i], playerCharacter!!)) {
+                        playerCharacter!!.playing = false
+                        rocks.removeAt(i)               // Remove the rock that hit the player
+                        return
+                    }
+                }
+                addNewRock()
+            } else {                            // The game is over
+                playerCharacter!!.resetDYC()
+                if (!gameOver) {                                // The game just ended?
+                    gameOver = true                             // YES, shows the explosion on player character
+                    newGameCreated = false
+                    startReset = System.nanoTime()
+                    explosionEffect!!.doExplosion(playerCharacter!!.xc, playerCharacter!!.yc)
+                } else {
+                    explosionEffect!!.update()
+                    val elapsed = (System.nanoTime() - startReset) / 1000000
+                    if (!newGameCreated and (elapsed > 10000)) {        // Restart the game after 10 seconds
+                        newGame()
+                    }
+                }
+            }
         }
     }
 
@@ -359,174 +528,12 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
                 lb.draw(canvas)
             }
             // Draw the explosion
-            if (started) explosionEffect!!.draw(canvas)
+            explosionEffect!!.draw(canvas)
             // Write the game score on the screen
             drawText(canvas)
             // Update the screen
             canvas.restoreToCount(savedState)
         }
-
-    }
-
-    /**
-     * Necessary to randomize the boundary height.
-     */
-    private var rnd = Random()
-
-    /**
-     * Default width of each boundary segment.
-     */
-    private val defaultBoundaryWidth = 20
-
-    /**
-     * Load the upper boundary array to restrict the player character moving area.
-     * Increase the boundary height considering the modulus 50 of the score.
-     */
-    private fun updateUpperBound() {
-        if (upperBoundary.isEmpty() or                          // Create the first segment
-                (playerCharacter!!.score % 50 == 0)) {        // Add a new segment periodically, based on score
-            val x = if (upperBoundary.isEmpty()) 0 else upperBoundary[upperBoundary.size - 1].xc + defaultBoundaryWidth
-            addNewUpperBoundary(x, 0)
-        }
-
-        for (i in upperBoundary.indices) {
-            upperBoundary[i].update()
-            if (upperBoundary[i].xc < -defaultBoundaryWidth) {
-                // Remove the segment out of the screen
-                upperBoundary.removeAt(i)
-                // Append a new segment at the end of the boundary
-                var h = 0
-                var x = 0
-                when {
-                    upperBoundary.isEmpty() -> {
-                        upBound = !upBound
-                    }
-                    upperBoundary[upperBoundary.size - 1].objHeight >= maxBoundaryHeight -> {
-                        upBound = false
-                        h = upperBoundary[upperBoundary.size - 1].objHeight - 1
-                        x = upperBoundary[upperBoundary.size - 1].xc + defaultBoundaryWidth
-                    }
-                    lowerBoundary[upperBoundary.size - 1].objHeight <= minBoundaryHeight -> {
-                        upBound = true
-                        h = upperBoundary[upperBoundary.size - 1].objHeight + 1
-                        x = upperBoundary[upperBoundary.size - 1].xc + defaultBoundaryWidth
-                    }
-                    else -> {
-                        h = if (upBound) {
-                            lowerBoundary[upperBoundary.size - 1].objHeight + 1
-                        } else {
-                            upperBoundary[upperBoundary.size - 1].objHeight - 1
-                        }
-                        x = upperBoundary[upperBoundary.size - 1].xc + defaultBoundaryWidth
-                    }
-                }
-                addNewUpperBoundary(x, h)
-            }
-        }
-    }
-
-    /**
-     * Add a new upper boundary segment into the array.
-     * @param [x] The segment position on X-axis.
-     * @param [height] The segment height. If zero, compute a random height.
-     */
-    private fun addNewUpperBoundary(x: Int, height: Int = 0) {
-        val h = if (height > 0) height else max(minBoundaryHeight, (rnd.nextDouble() * maxBoundaryHeight.toDouble() + 1).toInt())
-        val boundaryFrames = SpriteFrames(resources, R.drawable.ground, 1, 1, h, defaultBoundaryWidth)
-        val ac = AnimationClass(boundaryFrames)
-        val newBoundary = UpperBoundary(ac, x, 0)
-        upperBoundary.add(newBoundary)
-    }
-
-    /**
-     * Load the lower boundary array to restrict the player character moving area.
-     * Increase the boundary height considering the modulus 40 of the score.
-     */
-    private fun updateLowerBound() {
-        if (lowerBoundary.isEmpty() or                          // Create the first segment
-                (playerCharacter!!.score % 40 == 0)) {          // Add a new segment periodically, based on score
-            val x = if (lowerBoundary.isEmpty()) 0 else lowerBoundary[lowerBoundary.size - 1].xc + defaultBoundaryWidth
-            addNewLowerBoundary(x, 0)
-        }
-
-        for (i in lowerBoundary.indices) {
-            lowerBoundary[i].update()
-            if (lowerBoundary[i].xc < -defaultBoundaryWidth) {
-                // Remove the segment out of the screen
-                lowerBoundary.removeAt(i)
-                // Append a new segment at the end of the boundary
-                var h = 0
-                var x = 0
-                when {
-                    lowerBoundary.isEmpty() -> {
-                        lowBound = !lowBound
-                    }
-                    lowerBoundary[lowerBoundary.size - 1].objHeight >= maxBoundaryHeight -> {
-                        lowBound = false
-                        h = lowerBoundary[lowerBoundary.size - 1].objHeight - 1
-                        x = lowerBoundary[upperBoundary.size - 1].xc + defaultBoundaryWidth
-                    }
-                    lowerBoundary[lowerBoundary.size - 1].objHeight <= minBoundaryHeight -> {
-                        lowBound = true
-                        h = lowerBoundary[lowerBoundary.size - 1].objHeight + 1
-                        x = lowerBoundary[upperBoundary.size - 1].xc + defaultBoundaryWidth
-                    }
-                    else -> {
-                        h = if (lowBound) {
-                            lowerBoundary[lowerBoundary.size - 1].objHeight + 1
-                        } else {
-                            lowerBoundary[lowerBoundary.size - 1].objHeight - 1
-                        }
-                        x = lowerBoundary[upperBoundary.size - 1].xc + defaultBoundaryWidth
-                    }
-                }
-                addNewLowerBoundary(x, h)
-            }
-        }
-    }
-
-    /**
-     * Add a new lower boundary segment into the array.
-     * @param [x] The segment position on X-axis.
-     * @param [height] The segment height. If zero, compute a random height.
-     */
-    private fun addNewLowerBoundary(x: Int, height: Int = 0) {
-        val h = if (height > 0) height else max(minBoundaryHeight, (rnd.nextDouble() * maxBoundaryHeight.toDouble() + 1).toInt())
-        val boundaryFrames = SpriteFrames(resources, R.drawable.ground, 1, 1, h, defaultBoundaryWidth)
-        val ac = AnimationClass(boundaryFrames)
-        val newBoundary = LowerBoundary(ac, x, GAME_SURFACE_HEIGHT - h)
-        lowerBoundary.add(newBoundary)
-    }
-
-    /**
-     * Start a new game.
-     * Update the best score before clear the players score for the new run.
-     */
-    private fun newGame() {
-        // Purge all arrays for the new round
-        rocks.clear()
-        lowerBoundary.clear()
-        upperBoundary.clear()
-        minBoundaryHeight = 5
-        maxBoundaryHeight = 30
-        // Saves the best score before clear the score for a new round.
-        if (playerCharacter!!.score > bestScore) {
-            bestScore = playerCharacter!!.score
-        }
-        playerCharacter!!.resetScore()
-        playerCharacter!!.resetDYC()
-        playerCharacter!!.yc = GAME_SURFACE_HEIGHT / 2
-        // Initialize the boundaries
-        var x = 0
-        var h = minBoundaryHeight
-        while (x < (GAME_SURFACE_WIDTH) + defaultBoundaryWidth) {
-            addNewUpperBoundary(x, h)
-            addNewLowerBoundary(x, h)
-            x += defaultBoundaryWidth
-            h = 0
-        }
-        // Start the new round
-        newGameCreated = true
     }
 
     /**
@@ -540,21 +547,18 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
         p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         // Write the current score
         canvas.drawText("DISTANCE: %d".format(3 * playerCharacter!!.score),
-                10.toFloat(), (GAME_SURFACE_HEIGHT - 10).toFloat(), p)
+                (GAME_SURFACE_WIDTH - 215).toFloat(), (GAME_SURFACE_HEIGHT - 60).toFloat(), p)
         canvas.drawText("BEST: %d".format(bestScore),
-                (GAME_SURFACE_WIDTH - 215).toFloat(), (GAME_SURFACE_HEIGHT - 10).toFloat(), p)
+                (GAME_SURFACE_WIDTH - 215).toFloat(), (GAME_SURFACE_HEIGHT - 20).toFloat(), p)
         // Show the game tutorial on the screen if the game is not running
-        if (!playerCharacter!!.playing and newGameCreated and reset) {
-            val p1 = Paint()
-            //p1.color = Color.BLACK
-            p1.textSize = 40f
-            p1.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        if (!playerCharacter!!.playing /*&& !newGameCreated && gameOver */) {
+            p.textSize = 40f
             canvas.drawText("TAP TO START ON SCREEN",
-                    (GAME_SURFACE_WIDTH / 2 - 50).toFloat(), (GAME_SURFACE_HEIGHT / 2).toFloat(), p1)
+                    (GAME_SURFACE_WIDTH / 2 - 50).toFloat(), (GAME_SURFACE_HEIGHT / 2).toFloat(), p)
             canvas.drawText("KEEP PRESSED TO GO UP",
-                    (GAME_SURFACE_WIDTH / 2 - 50).toFloat(), (GAME_SURFACE_HEIGHT / 2 + 20).toFloat(), p1)
+                    (GAME_SURFACE_WIDTH / 2 - 50).toFloat(), (GAME_SURFACE_HEIGHT / 2 + 40).toFloat(), p)
             canvas.drawText("RELEASE TO GO DOWN",
-                    (GAME_SURFACE_WIDTH / 2 - 50).toFloat(), (GAME_SURFACE_HEIGHT / 2 + 40).toFloat(), p1)
+                    (GAME_SURFACE_WIDTH / 2 - 50).toFloat(), (GAME_SURFACE_HEIGHT / 2 + 80).toFloat(), p)
         }
     }
 

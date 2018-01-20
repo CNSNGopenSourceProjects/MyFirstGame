@@ -46,7 +46,7 @@ class PlayerCharacter(private val ac: AnimationClass, private val delay: Int = 1
     /**
      * Saves the initial time for score logic.
      */
-    private var startTime: Long = 0
+    private var startTime: Long =  System.currentTimeMillis()
 
     /**
      * While 'true', the player must go up to jump obstacles.
@@ -72,8 +72,6 @@ class PlayerCharacter(private val ac: AnimationClass, private val delay: Int = 1
         ac.delay = delay
         objWidth = ac.frameWidth
         objHeight = ac.frameHeight
-
-        startTime = System.nanoTime()
     }
 
     /**
@@ -81,10 +79,10 @@ class PlayerCharacter(private val ac: AnimationClass, private val delay: Int = 1
      * upper and lower bounds.
      */
     fun update() {
-        val elapsed = (System.nanoTime() - startTime) / 1000000
+        val elapsed = System.currentTimeMillis() - startTime
         if (elapsed > 100) {
             score++
-            startTime = System.nanoTime()
+            startTime = System.currentTimeMillis()
         }
         ac.update()
 
@@ -113,6 +111,6 @@ class PlayerCharacter(private val ac: AnimationClass, private val delay: Int = 1
      * @return Informs the sprite animation status.
      */
     override fun toString(): String {
-        return "score=$score - delay=$delay - numberOfFrames=${ac.numberOfFrames} - ${super.toString()}"
+        return "playing=${playing} - score=$score - delay=$delay - ${super.toString()}"
     }
 }

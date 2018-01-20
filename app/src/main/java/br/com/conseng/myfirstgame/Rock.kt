@@ -16,12 +16,12 @@ import kotlin.math.min
  * @constructor Creates the rock obstacle logic loading the frames images and the character size.
  * @param [ac] The player sprite animation characteristics.
  * @param [scoreWeight] Define the obstacle score.
- * @param [delay] Character animation delay.  Default=10.
  * @param [autoPlay] If 'true', hurls a new rock when the rock reach the left side of the screen.
+ * @param [delay] Character animation delay.  Default=10.
  * @throws [IllegalArgumentException] If [delay] is negative or zero.
  */
 class Rock(private val ac: AnimationClass, private val scoreWeight: Int,
-           private val delay: Int = 100, val autoPlay: Boolean = true) :
+           val autoPlay: Boolean = true, private val delay: Int = 100) :
         GameObj() {
 
     /**
@@ -43,16 +43,29 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int,
     /**
      * Informs the time this object has been created (ns).
      */
-    var startTime: Long = 0
+    private var startTime: Long = System.currentTimeMillis()
         private set
 
     /**
      * Informs how long the rock is on the screen (ms).
      */
     var rockElapsed: Long = 0
+        get() = System.currentTimeMillis() - startTime
         private set
 
-    // Start coordinate of the rock obstacle.
+    /**
+     * Initialize the character parameters, hurling the rock with random position and speed.
+     */
+    init {
+        // Validate the parameters
+        if (delay < 1) throw IllegalArgumentException("The delay must be higher than zero: delay=%d".format(delay))
+        // Initialize the rock sprite animation.
+        ac.delay = delay
+        objWidth = ac.frameWidth
+        objHeight = ac.frameHeight
+        hurlsRock()
+    }
+
     /**
      * Provides the initial rock position on X-axis.
      */
@@ -64,33 +77,24 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int,
     private fun getInitialY(): Int = min(GAME_SURFACE_HEIGHT - objHeight, (rnd.nextDouble() * GAME_SURFACE_HEIGHT.toDouble()).toInt())
 
     /**
-     * Provides the displacement on X-axis. Higher score = faster rock!
+     * Provides the initial rock displacement on X-axis. Higher score = faster rock!
      */
-    private fun getDisplacementX(): Int {
+    private fun getInitialDisplacementX(): Int {
         speed = min(35, (7 + (rnd.nextDouble() * scoreWeight.toDouble() / 30.0).toInt()))
         return -speed
     }
 
     /**
-     * Provides the displacement on Y-axis.
+     * Provides the initial rock displacement on Y-axis.
      */
-    private fun getDisplacementY(): Int = min(20, (rnd.nextDouble() * 40.toDouble()).toInt() - 20)
+    private fun getInitialDisplacementY(): Int = min(20, (rnd.nextDouble() * 40.toDouble()).toInt() - 20)
 
     /**
      * Move the rock right to left.
-     * When the rocks reached the left side, a new rock starts on right side.
-     * @return 'true' if the reached the left side and a new rock started on right side .
      */
-    private fun updateX(): Boolean {
-        val next = xc + dxc
-        val newRock: Boolean = next <= -objWidth
-        if (newRock) {                      // The rock disappear on left side?
-            out = true                      // YES, informs it
-            if (autoPlay) hurlsRock()           // If enabled, a new rock will start on right side
-        } else {
-            xc = next
-        }
-        return newRock
+    private fun updateX() {
+        this.xc += dxc
+        this.out = xc <= -objWidth
     }
 
     /**
@@ -106,41 +110,27 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int,
         val next = yc + dyc
         when {
             next > GAME_SURFACE_HEIGHT - objHeight - boundaryHeight -> {
-                yc = GAME_SURFACE_HEIGHT - objHeight - boundaryHeight
-                dyc = -dyc
+                this.yc = GAME_SURFACE_HEIGHT - objHeight - boundaryHeight
+                this.dyc = -dyc
             }
             next < boundaryHeight -> {
-                yc = boundaryHeight
-                dyc = -dyc
+                this.yc = boundaryHeight
+                this.dyc = -dyc
             }
-            else -> yc = next
+            else -> this.yc = next
         }
     }
 
     /**
-     * Hurls a new rock, starting on right side.
+     * Moves the rock that left the screen to start again on screen right side.
      * Position (y-axis) and speed (x-axis) will be random.
      */
     private fun hurlsRock() {
-        xc = getInitialX()
-        yc = getInitialY()
-        dxc = getDisplacementX()
-        dyc = getDisplacementY()
-    }
-
-    /**
-     * Initialize the character parameters, hurling the rock with random position and speed.
-     */
-    init {
-        // Validate the parameters
-        if (delay < 1) throw IllegalArgumentException("The delay must be higher than zero: delay=%d".format(delay))
-        // Initialize the rock sprite animation.
-        hurlsRock()
-        ac.delay = delay
-        objWidth = ac.frameWidth
-        objHeight = ac.frameHeight
-        startTime = System.nanoTime()
-        rockElapsed = startTime
+        this.xc = getInitialX()
+        this.yc = getInitialY()
+        this.dxc = getInitialDisplacementX()
+        this.dyc = getInitialDisplacementY()
+        this.out = false
     }
 
     /**
@@ -149,11 +139,12 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int,
      * @param [boundaryHeight] Consider the boundary height on the rock bouncing.
      */
     fun update(boundaryHeight: Int) {
-        if (autoPlay or !out) {
-            if (!updateX()) updateY(boundaryHeight)
-            ac.update()
-            rockElapsed = (System.nanoTime() - startTime) / 1000000
-        }
+        updateX()
+        if (autoPlay and out)               // Is on auto play mode?
+            hurlsRock()                     // YES, move the rock to the right side-ending
+        else
+            updateY(boundaryHeight)         // NO, update the Y-axis position
+        ac.update()
     }
 
     /**
@@ -162,12 +153,10 @@ class Rock(private val ac: AnimationClass, private val scoreWeight: Int,
      * @see [https://developer.android.com/reference/android/view/SurfaceView.html#draw(android.graphics.Canvas)]
      */
     fun draw(canvas: Canvas?) {
-        if (autoPlay or !out) {
-            try {
-                canvas!!.drawBitmap(ac.getBitmap, floatXc, floatYc, null)
-            } catch (e: Exception) {
-                println("ERROR WHILE DRAWING THE ROCK: ${e.message}")
-            }
+        try {
+            canvas!!.drawBitmap(ac.getBitmap, floatXc, floatYc, null)
+        } catch (e: Exception) {
+            println("ERROR WHILE DRAWING THE ROCK: ${e.message}")
         }
     }
 
