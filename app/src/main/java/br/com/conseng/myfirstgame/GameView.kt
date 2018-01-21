@@ -542,23 +542,31 @@ class GameView(context: Context) : SurfaceView(context), SurfaceHolder.Callback 
      */
     private fun drawText(canvas: Canvas) {
         val p = Paint()
-        p.color = Color.BLACK
-        p.textSize = 30f
+        p.color = Color.LTGRAY
+        p.textSize = 40f
         p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         // Write the current score
         canvas.drawText("DISTANCE: %d".format(3 * playerCharacter!!.score),
-                (GAME_SURFACE_WIDTH - 215).toFloat(), (GAME_SURFACE_HEIGHT - 60).toFloat(), p)
+                (GAME_SURFACE_WIDTH - 300).toFloat(), (GAME_SURFACE_HEIGHT - 100).toFloat(), p)
+        canvas.drawText("SCORE: %d".format(playerCharacter!!.score),
+                (GAME_SURFACE_WIDTH - 300).toFloat(), (GAME_SURFACE_HEIGHT - 60).toFloat(), p)
         canvas.drawText("BEST: %d".format(bestScore),
-                (GAME_SURFACE_WIDTH - 215).toFloat(), (GAME_SURFACE_HEIGHT - 20).toFloat(), p)
+                (GAME_SURFACE_WIDTH - 300).toFloat(), (GAME_SURFACE_HEIGHT - 20).toFloat(), p)
         // Show the game tutorial on the screen if the game is not running
-        if (!playerCharacter!!.playing /*&& !newGameCreated && gameOver */) {
-            p.textSize = 40f
-            canvas.drawText("TAP TO START ON SCREEN",
+        if (!playerCharacter!!.playing and !newGameCreated and gameOver) {
+            p.textSize = 100f
+            p.color = Color.RED
+            canvas.drawText("GAME OVER",
                     (GAME_SURFACE_WIDTH / 2 - 50).toFloat(), (GAME_SURFACE_HEIGHT / 2).toFloat(), p)
+        } else if (!playerCharacter!!.playing /* and newGameCreated and gameOver */) {
+            p.textSize = 50f
+            p.color = Color.BLACK
+            canvas.drawText("TAP TO START ON SCREEN",
+                    (GAME_SURFACE_WIDTH / 2 - 100).toFloat(), (GAME_SURFACE_HEIGHT / 2).toFloat(), p)
             canvas.drawText("KEEP PRESSED TO GO UP",
-                    (GAME_SURFACE_WIDTH / 2 - 50).toFloat(), (GAME_SURFACE_HEIGHT / 2 + 40).toFloat(), p)
+                    (GAME_SURFACE_WIDTH / 2 - 100).toFloat(), (GAME_SURFACE_HEIGHT / 2 + 50).toFloat(), p)
             canvas.drawText("RELEASE TO GO DOWN",
-                    (GAME_SURFACE_WIDTH / 2 - 50).toFloat(), (GAME_SURFACE_HEIGHT / 2 + 80).toFloat(), p)
+                    (GAME_SURFACE_WIDTH / 2 - 100).toFloat(), (GAME_SURFACE_HEIGHT / 2 + 100).toFloat(), p)
         }
     }
 
